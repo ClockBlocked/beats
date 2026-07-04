@@ -28,7 +28,7 @@
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       // Append version for cache busting on new deploys only
-      script.src = src + (src.indexOf('?') > -1 ? '&' : '?') + APP_VERSION;
+      script.src = src;// + (src.indexOf('?') > -1 ? '&' : '?') + APP_VERSION;
       script.async = false; // Maintain load order
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load ' + src));
