@@ -12,19 +12,12 @@ class Home {
       a.albums.map(alb => ({ artistId: a.id, artistName: a.artist, albumId: alb.id, albumName: alb.album, coverUrl: alb.coverUrl, genre: a.genre }))
     );
     const allSongs = state.getAllSongs();
-    const featured = IdUtils.sample(allAlbums, 8);
-    const topPicks = IdUtils.sample(allSongs, 8);
-    const spotlight = IdUtils.sample([...state.enrichedLibrary], 6);
+    const featured = IdUtils.sample(allAlbums, 15);
+    const topPicks = IdUtils.sample(allSongs, 12);
+    const spotlight = IdUtils.sample([...state.enrichedLibrary], 10);
 
     return `
       <div class="pb-28 animate-fadeInUp">
-    <div class="breadcrumb-toggle-bar">
-      <div class="max-w-7xl mx-auto flex justify-center">
-        <button id="breadcrumb-toggle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
-    </div>  
         <div class="mb-8">
           <h1 class="font-black text-2xl md:text-3xl lg:text-4xl mb-2">
             Welcome to MyBeats<span style="color: hsl(var(--accent-coral));">\u2122</span>
@@ -66,11 +59,11 @@ class Home {
     return `
       <section class="mb-8">
         <h2 class="section-header">Your Playlists</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-6 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           ${playlists.map((pl, i) => `
-            <div class="rounded-xl p-4 transition-all cursor-pointer animate-fadeInUp hover:-translate-y-1"
+            <div class="rounded-md p-2 transition-all cursor-pointer animate-fadeInUp hover:-translate-y-1"
                  style="background: hsl(var(--bg-elevated)); animation-delay: ${i * 50}ms">
-              <div class="w-full aspect-square rounded-xl mb-3 flex items-center justify-center"
+              <div class="w-full aspect-square rounded-md mb-3 flex items-center justify-center"
                    style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.2), hsl(var(--accent-pink) / 0.15));">
                 ${Icons.general.playlist(36)}
               </div>
@@ -91,20 +84,13 @@ class Library {
     const state = this.ui.state;
     return `
       <div class="pb-28 animate-fadeInUp">
-    <div class="breadcrumb-toggle-bar">
-      <div class="max-w-7xl mx-auto flex justify-center">
-        <button id="breadcrumb-toggle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
-    </div>
         <div class="space-y-8">
           ${state.enrichedLibrary.map((artist, i) => `
             <section class="animate-fadeInUp" style="animation-delay: ${i * 80}ms">
               <button class="flex items-center gap-3 mb-4 group" data-artist-id="${artist.id}">
                 <img src="${artist.imageUrl}" class="w-12 h-12 rounded-full object-cover transition-transform group-hover:scale-110">
                 <div class="text-left">
-                  <h2 class="font-bold text-lg group-hover:underline">${artist.artist}</h2>
+                  <h4 class="font-bold text-md group-hover:underline">${artist.artist}</h4>
                   <p class="text-xs" style="color: hsl(var(--text-secondary));">${artist.genre || 'Artist'} \u2022 ${artist.albums.length} albums</p>
                 </div>
               </button>
@@ -138,13 +124,6 @@ class Favorites {
     ];
     return `
       <div class="pb-28 animate-fadeInUp">
-    <div class="breadcrumb-toggle-bar">
-      <div class="max-w-7xl mx-auto flex justify-center">
-        <button id="breadcrumb-toggle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
-    </div>
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
           ${tabs.map(({ key, label, count }) => `
             <button class="tab-btn ${key === state.favoritesTab ? 'active' : ''}" data-tab="${key}">
