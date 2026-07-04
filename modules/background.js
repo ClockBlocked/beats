@@ -1,7 +1,7 @@
 const CONFIG = {
   IMAGE_BASE: {
-    artist: '/content/artistPortraits/',
-    album:  '/content/albumCovers/'
+    artist: '/beats/content/artistPortraits/',
+    album:  '/beats/content/albumCovers/'
   },
   FAVOURITES: {
     favSongs:   'Songs',
