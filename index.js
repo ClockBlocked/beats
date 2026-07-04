@@ -11,24 +11,24 @@
   const APP_VERSION = 'v2024.06.3';
 
   const modules = [
-    '/modules/colours.js',
-    '/modules/library.js',
-    '/modules/background.js',
-    '/modules/FavoritesPlaylists.js',
-    '/modules/pages.js',
-    '/modules/listeners.js',
-    '/modules/UIManager.js',
-    '/modules/ui-enhancements.js',
-    '/modules/MediaSessionManager.js',
-    '/modules/main.js',
-    '/modules/memory.js'
+    '/beats/modules/colours.js',
+    '/beats/modules/library.js',
+    '/beats/modules/background.js',
+    '/beats/modules/FavoritesPlaylists.js',
+    '/beats/modules/pages.js',
+    '/beats/modules/listeners.js',
+    '/beats/modules/UIManager.js',
+    '/beats/modules/ui-enhancements.js',
+    '/beats/modules/MediaSessionManager.js',
+    '/beats/modules/main.js',
+    '/beats/modules/memory.js'
   ];
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       // Append version for cache busting on new deploys only
-      script.src = src;// + (src.indexOf('?') > -1 ? '&' : '?') + APP_VERSION;
+      script.src = src; + (src.indexOf('?') > -1 ? '&' : '?') + APP_VERSION;
       script.async = false; // Maintain load order
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load ' + src));
