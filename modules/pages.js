@@ -321,7 +321,7 @@ class Artists {
 
     const similarIds = artist.similar || [];
     const similarArtists = similarIds
-      .map(id => state.getArtistByIdOrName(id))
+      .map(id => state.getArtistById(id))
       .filter(Boolean);
     const rows = [
       similarArtists.slice(0, 4),
