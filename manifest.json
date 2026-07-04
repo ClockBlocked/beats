@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "manifest_version": "1",
+
+  "name": "MyBeats Music",
+  "short_name": "MyBeats",
+  "description": "Stream and share all your favorite music for free. MyBeats is a beautiful, fast PWA music player with offline support, album art, playlists, favorites, and more.",
+  "dir": "auto",
+  "lang": "en",
+  "id": "/?pwa=true",
+  "start_url": "https://mybeats.xo.je/",
+  "scope": "https://mybeats.xo.je/",
+
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+
+  "orientation": "portrait-primary",
+  "theme_color": "#141924",
+  "background_color": "#141924",
+
+  "categories": [
+    "music",
+    "entertainment",
+    "audio",
+    "lifestyle",
+    "social"
+  ],
+
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-511a3092f67e",
+
+  "icons": [{
+    "src": "manifest/icons/16.png",
+    "sizes": "16x16",
+    "type": "image/png",
+    "purpose": "any"
+  },
+    {
+      "src": "manifest/icons/20.png",
+      "sizes": "20x20",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/40.png",
+      "sizes": "40x40",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/50.png",
+      "sizes": "50x50",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/60.png",
+      "sizes": "60x60",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/80.png",
+      "sizes": "80x80",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/100.png",
+      "sizes": "100x100",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/120.png",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+
+    {
+      "src": "manifest/icons/icon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-20x20.png",
+      "sizes": "20x20",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-29x29.png",
+      "sizes": "29x29",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-40x40.png",
+      "sizes": "40x40",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-44x44.png",
+      "sizes": "44x44",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-50x50.png",
+      "sizes": "50x50",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-57x57.png",
+      "sizes": "57x57",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-58x58.png",
+      "sizes": "58x58",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-60x60.png",
+      "sizes": "60x60",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-64x64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-76x76.png",
+      "sizes": "76x76",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-80x80.png",
+      "sizes": "80x80",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-87x87.png",
+      "sizes": "87x87",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-100x100.png",
+      "sizes": "100x100",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-114x114.png",
+      "sizes": "114x114",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-125x125.png",
+      "sizes": "125x125",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-150x150.png",
+      "sizes": "150x150",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-200x200.png",
+      "sizes": "200x200",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-310x310.png",
+      "sizes": "310x310",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-400x400.png",
+      "sizes": "400x400",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "manifest/icons/icon-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+
+    {
+      "src": "manifest/icons/launchericon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "manifest/icons/launchericon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }],
+
+
+  "screenshots": [{
+    "src": "manifest/screenshots/icon-1024x1024.png",
+    "sizes": "1024x1024",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "MyBeats Music Player"
+  }],
+
+  "shortcuts": [{
+    "name": "Now Playing",
+    "short_name": "Playing",
+    "description": "Jump to the currently playing song",
+    "url": "/",
+    "icons": [{
+      "src": "/manifest/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    }]
+  },
+    {
+      "name": "Library",
+      "short_name": "Library",
+      "description": "Browse your full music library",
+      "url": "/library",
+      "icons": [{
+        "src": "/manifest/icons/icon-96x96.png",
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "Favorites",
+      "short_name": "Favorites",
+      "description": "Open your favorite songs, artists, and albums",
+      "url": "/favorites",
+      "icons": [{
+        "src": "/manifest/icons/icon-96x96.png",
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    },
+    {
+      "name": "Playlists",
+      "short_name": "Playlists",
+      "description": "View and manage your playlists",
+      "url": "/playlists",
+      "icons": [{
+        "src": "/manifest/icons/icon-96x96.png",
+        "sizes": "96x96",
+        "type": "image/png"
+      }]
+    }],
+
+  "share_target": {
+    "action": "/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "name",
+      "text": "description",
+      "url": "link",
+      "files": [{
+        "name": "audio",
+        "accept": [
+          "audio/*",
+          "audio/mpeg",
+          "audio/mp3",
+          "audio/ogg",
+          "audio/wav",
+          "audio/flac",
+          "audio/m4a",
+          "audio/aac"
+        ]
+      }]
+    }
+  },
+
+  "protocol_handlers": [{
+    "protocol": "web+mybeats",
+    "url": "/?action=%s"
+  },
+    {
+      "protocol": "web+music",
+      "url": "/?search=%s"
+    }],
+
+  "file_handlers": [{
+    "action": "/",
+    "accept": {
+      "audio/mpeg": [".mp3"],
+      "audio/ogg": [".ogg"],
+      "audio/wav": [".wav"],
+      "audio/flac": [".flac"],
+      "audio/x-m4a": [".m4a"],
+      "audio/aac": [".aac"],
+      "audio/mp4": [".mp4"]
+    }
+  }],
+
+  "related_applications": [{
+    "platform": "play",
+    "url": "https://play.google.com/store/apps/details?id=com.mybeats.music"
+  },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/mybeats-music/id0000000000"
+    },
+    {
+      "platform": "windows",
+      "url": "https://apps.microsoft.com/detail/mybeats-music/9NXXXXXXXXXX"
+    }],
+  "prefer_related_applications": false,
+
+  "edge_side_panel": {
+    "preferred_width": 380
+  },
+
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["focus-existing",
+      "auto"]
+  },
+
+  "scope_extensions": [{
+    "origin": "https://mybeats.xo.je"
+  }]
+}

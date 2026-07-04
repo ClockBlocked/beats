@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyBeats™ — stunning audio</title>
+  <meta name="description" content="MyBeats – your free, gorgeous music streamer" />
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="57x57" href="./manifest/icons/icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="./manifest/icons/icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="./manifest/icons/icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="./manifest/icons/icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="./manifest/icons/icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="./manifest/icons/icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="./manifest/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="./manifest/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="./manifest/icons/icon-167x167.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./manifest/icons/icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./manifest/icons/icon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./manifest/icons/icon-16x16.png">
+  <link rel="manifest" href="https://mybeats.xo.je/manifest.json">
+  <meta name="msapplication-TileColor" content="#000000">
+  <meta name="msapplication-TileImage" content="./manifest/icons/mstile-100.png">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Fonts & Tailwind (keep for utility classes if needed) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ===== MAIN CSS (merged & nested) ===== -->
+  <link rel="stylesheet" href="/ui/new.css">
+
+  <!-- ===== PWA INSTALL BANNER (lightweight inline styles) ===== -->
+  <style>
+    @keyframes slideDown {
+      0% { opacity: 0; transform: translateX(-50%) translateY(-120%); }
+      60% { opacity: 1; transform: translateX(-50%) translateY(6%); }
+      100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .installBanner {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 32px); max-width: 400px;
+      background: rgba(22,22,24,0.88); backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px); border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset;
+      z-index: 999999; padding: 14px 18px;
+      display: flex; align-items: center; gap: 12px;
+      font-family: -apple-system, 'Inter', system-ui, sans-serif;
+      color: #f5f5f7; cursor: pointer;
+      animation: slideDown 0.45s cubic-bezier(0.22,1,0.36,1);
+      transition: all 0.25s ease; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .installBanner:hover {
+      background: rgba(30,30,34,0.9); border-color: rgba(255,255,255,0.18);
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.1) inset;
+    }
+    .installBanner:active { transform: translateX(-50%) translateY(0); transition: all 0.1s ease; }
+    .installBanner::before {
+      content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 3px;
+      background: linear-gradient(to bottom, #4da6ff, #0969da); border-radius: 0 3px 3px 0;
+    }
+    .bannerText { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .bannerTitle { font-size: 0.92rem; font-weight: 600; letter-spacing: -0.2px; color: #fff; margin: 0; line-height: 1.2; }
+    .bannerDesc { font-size: 0.75rem; font-weight: 400; color: rgba(255,255,255,0.55); letter-spacing: 0.1px; line-height: 1.3; margin: 0; }
+    .bannerArrow {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .installBanner:hover .bannerArrow { background: rgba(255,255,255,0.2); transform: translateX(2px); }
+    .bannerArrow svg { width: 14px; height: 14px; stroke: rgba(255,255,255,0.8); stroke-width: 2; fill: none; }
+    @media (max-width: 380px) {
+      .installBanner { padding: 12px 14px; }
+      .bannerTitle { font-size: 0.85rem; }
+      .bannerDesc { font-size: 0.7rem; }
+    }
+  </style>
+
+  <!-- ===== PWA INSTALL SCRIPT ===== -->
+  <script>
+    (function() {
+      if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) return;
+      let deferredPrompt;
+      let banner;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (banner) { banner.style.pointerEvents = 'auto'; banner.style.opacity = '1'; }
+      });
+
+      banner = document.createElement('div');
+      banner.className = 'installBanner';
+      banner.style.pointerEvents = 'none';
+      banner.innerHTML = `
+        <div class="bannerText">
+          <p class="bannerTitle">Install App</p>
+          <p class="bannerDesc">Add to Home Screen for fast, full‑screen access</p>
+        </div>
+        <div class="bannerArrow">
+          <svg viewBox="0 0 24 24"><polyline points="7 17 12 22 17 17"/><line x1="12" y1="22" x2="12" y2="2"/></svg>
+        </div>
+      `;
+      document.body.prepend(banner);
+
+      banner.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (outcome === 'accepted') banner.remove();
+      });
+
+      setTimeout(() => {
+        if (banner && banner.parentNode) {
+          banner.style.opacity = '0';
+          banner.style.pointerEvents = 'none';
+          setTimeout(() => { if (banner.parentNode) banner.remove(); }, 250);
+        }
+      }, 3000);
+
+      window.addEventListener('appinstalled', () => {
+        if (banner && banner.parentNode) banner.remove();
+      });
+    })();
+  </script>
+
+  <!-- Static version for cache busting -->
+  <meta name="app-version" content="v2024.06">
+</head>
+
+<body>
+
+  <!-- The loading bar and initial loader are now styled via main.css -->
+  <!-- They are still in the DOM for the JS to control -->
+  <div id="loading-bar"></div>
+
+  <!-- Top Navigation -->
+  <nav id="top-nav">
+    <div class="nav-container">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" stroke="white" stroke-width="2.5"/><circle cx="18" cy="16" r="3" stroke="white" stroke-width="2.5"/></svg>
+        </div>
+        <span class="logo-text">MyBeats<span>™</span></span>
+      </div>
+      <div class="nav-links">
+        <button class="nav-link" data-nav="home">Home</button>
+        <button class="nav-link" data-nav="library">Library</button>
+        <button class="nav-link" data-nav="favorites">Favorites</button>
+        <button class="nav-link" data-nav="playlists">Playlists</button>
+      </div>
+      <div class="nav-actions">
+        <button id="open-search" class="nav-icon-btn" title="Search (Ctrl+K)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumbs -->
+  <div id="breadcrumb-container">
+    <div class="breadcrumb-trail" id="breadcrumb-trail">
+      <div class="breadcrumb-wrapper">
+        <div class="breadcrumb-items" id="breadcrumb-items"></div>
+      </div>
+    </div>
+<button id="breadcrumb-toggle" class="breadcrumb-toggle-btn" title="Toggle breadcrumbs">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M6 9l6 6 6-6"/>
+  </svg>
+</button>
+
+    
+  </div>
+
+  <!-- Search Modal -->
+  <div id="search-bar" class="hidden">
+    <div class="search-modal-overlay" id="search-overlay"></div>
+    <div class="search-modal-panel">
+      <div class="search-modal-header">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search songs, artists, albums..." autocomplete="off" autocorrect="off" spellcheck="false">
+          <kbd class="search-shortcut">ESC</kbd>
+        </div>
+        <button class="search-close-btn" id="close-search" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="search-divider"></div>
+      <div id="search-results-container" class="search-results-area hidden"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main id="main-content" style="padding-top: 4rem; padding-left: 2rem; padding-right: 2rem; max-width: 1280px; margin: 0 auto; width: 100%; min-height: 100svh;">
+  </main>
+
+  <!-- Mini Player -->
+  <div id="player-bar-container"></div>
+
+  <!-- Player Drawer Overlay -->
+  <div class="player-drawer-overlay" id="player-drawer-overlay"></div>
+   <div id="full-player-drawer"></div>
+ <div id="visualizer-canvas"></div>
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal" id="modal"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Global Audio Element -->
+  <audio id="global-audio" preload="none" crossorigin="anonymous"></audio>
+
+  <!-- ===== SCRIPTS ===== -->
+
+  <script src="modules/library.js"></script>
+  
+  <script src="index.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>
+    setTimeout(function() {
+      eruda.init();
+      eruda.show();
+    }, 500);
+  </script>
+</body>
+</html>
