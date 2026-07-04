@@ -29,6 +29,7 @@ const CONFIG = {
     default: 1.0
   }
 };
+
 const Utils = {
   slugify(name) {
     if (!name) return 'default';
@@ -51,20 +52,32 @@ const Utils = {
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   },
+  // Normalizes any incoming id (number/string/null) to a canonical string
+  // key so every lookup map uses a single consistent key type.
   id(val) {
     return val == null ? '' : String(val);
+  },
+  // Generates a fresh, collision-resistant id for things the user creates
+  // at runtime (e.g. playlists). NEVER derived from a name.
+  newId(prefix = 'id') {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return `${prefix}_${crypto.randomUUID()}`;
+    }
+    return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
   }
 };
 
 class PlayerState {
   constructor() {
+    this.artistsById = new Map();
+    this.albumsById  = new Map();
+    this.songsById   = new Map();
+
     this.enrichedLibrary = this.buildLibrary();
 
     this.currentPage        = 'home';
     this.artistId           = null;
-    this.artistPageName     = null;
     this.selectedAlbumId    = null;
-    this.selectedAlbumName  = null;
     this.isSearchOpen       = false;
     this.searchQuery        = '';
 
@@ -102,130 +115,122 @@ class PlayerState {
     this.loadingStart    = 0;
   }
 
+
+
   buildLibrary() {
     if (typeof metadata === 'undefined') {
       console.error('[PlayerState] Global `metadata` not found. Library is empty.');
       return [];
     }
-    return metadata.map(artist => {
-      const imageUrl = `${CONFIG.IMAGE_BASE.artist}${Utils.slugify(artist.artist)}.png`;
-      return {
-        ...artist,
-        id: String(artist.id),   // ensure string for consistency
-        imageUrl,
-        albums: artist.albums.map(album => ({
-          ...album,
-          id: String(album.id),
-          coverUrl: `${CONFIG.IMAGE_BASE.album}${Utils.slugify(album.album)}.png`
-        }))
-      };
+
+    return metadata.map(artistRaw => {
+      const artistId  = Utils.id(artistRaw.id);
+      const imageUrl  = `${CONFIG.IMAGE_BASE.artist}${Utils.slugify(artistRaw.artist)}.png`;
+
+      const albums = artistRaw.albums.map(albumRaw => {
+        const albumId  = Utils.id(albumRaw.id);
+        const coverUrl = `${CONFIG.IMAGE_BASE.album}${Utils.slugify(albumRaw.album)}.png`;
+
+        const songs = albumRaw.songs.map(songRaw => {
+          const songId = Utils.id(songRaw.id);
+          const song = { ...songRaw, id: songId, albumId, artistId };
+          this.songsById.set(songId, song);
+          return song;
+        });
+
+        const album = { ...albumRaw, id: albumId, artistId, coverUrl, songs };
+        this.albumsById.set(albumId, album);
+        return album;
+      });
+
+      const artist = { ...artistRaw, id: artistId, imageUrl, albums };
+      this.artistsById.set(artistId, artist);
+      return artist;
     });
   }
 
   getArtistById(id) {
-    const sid = Utils.id(id);
-    return this.enrichedLibrary.find(a => Utils.id(a.id) === sid);
+    return this.artistsById.get(Utils.id(id));
   }
   getAlbumById(id) {
-    const sid = Utils.id(id);
-    for (const artist of this.enrichedLibrary) {
-      const album = artist.albums.find(a => Utils.id(a.id) === sid);
-      if (album) return { ...album, artistId: artist.id, artistName: artist.artist };
-    }
-    return undefined;
+    const album = this.albumsById.get(Utils.id(id));
+    if (!album) return undefined;
+    // Name is resolved here purely for frontend display convenience —
+    // the lookup itself was already done by id above.
+    const artist = this.artistsById.get(album.artistId);
+    return { ...album, artistName: artist ? artist.artist : undefined };
   }
   getSongById(id) {
-    const sid = Utils.id(id);
-    for (const artist of this.enrichedLibrary) {
-      for (const album of artist.albums) {
-        for (const song of album.songs) {
-          if (Utils.id(song.id) === sid) {
-            return {
-              ...song,
-              artistId: artist.id,
-              albumId: album.id,
-              artist: artist.artist,
-              album: album.album,
-              coverUrl: album.coverUrl,
-              artistImageUrl: artist.imageUrl
-            };
-          }
-        }
-      }
-    }
-    return undefined;
-  }
-  getArtistByIdOrName(identifier) {
-    if (!identifier) return undefined;
-    // Try as ID first
-    const byId = this.getArtistById(identifier);
-    if (byId) return byId;
-    // Try as exact name match
-    return this.enrichedLibrary.find(a => a.artist === identifier);
+    const song = this.songsById.get(Utils.id(id));
+    if (!song) return undefined;
+    const album  = this.albumsById.get(song.albumId);
+    const artist = this.artistsById.get(song.artistId);
+    return {
+      ...song,
+      artist:         artist ? artist.artist   : undefined,
+      album:          album  ? album.album     : undefined,
+      coverUrl:       album  ? album.coverUrl  : undefined,
+      artistImageUrl: artist ? artist.imageUrl : undefined
+    };
   }
   getAllSongs() {
-    const all = [];
-    for (const artist of this.enrichedLibrary) {
-      for (const album of artist.albums) {
-        for (const song of album.songs) {
-          all.push({
-            ...song,
-            artistId: artist.id,
-            albumId: album.id,
-            artist: artist.artist,
-            album: album.album,
-            coverUrl: album.coverUrl,
-            artistImageUrl: artist.imageUrl
-          });
-        }
-      }
-    }
-    return all;
-  }
-  findArtist(name) {
-    return this.enrichedLibrary.find(a => a.artist === name);
-  }
-  findArtistById(id) { return this.getArtistById(id); }
-  findAlbumById(artist, albumId) {
-    if (!artist?.albums) return undefined;
-    const sid = Utils.id(albumId);
-    return artist.albums.find(a => Utils.id(a.id) === sid);
-  }
-  findSong(id) { return this.getSongById(id); }
-  getArtistId(name) {
-    const artist = this.findArtist(name);
-    return artist?.id || Utils.slugify(name);
-  }
-  getAlbumId(artistName, albumName) {
-    const artist = typeof artistName === 'object' ? artistName : this.findArtist(artistName);
-    if (!artist?.albums) return Utils.slugify(albumName);
-    const album = artist.albums.find(a => a.album === albumName);
-    return album?.id || Utils.slugify(albumName);
-  }
-  
-  getPlaylistId(name) {
-    const pl = this.playlists.find(p => p.name === name);
-    return pl?.id || Utils.slugify(name);
+    return Array.from(this.songsById.keys()).map(id => this.getSongById(id));
   }
 
+  getArtistName(id) {
+    return this.getArtistById(id)?.artist;
+  }
+  getAlbumName(id) {
+    return this.getAlbumById(id)?.album;
+  }
+  getSongName(id) {
+    // Adjust `.title` to match whatever field your metadata uses for a
+    // song's display name (e.g. `.title` or `.name`).
+    const song = this.getSongById(id);
+    return song?.title ?? song?.name;
+  }
+
+
+  createPlaylist({ name, description = '', tags = [] } = {}) {
+    const playlist = {
+      id: Utils.newId('pl'),
+      name: name || 'Unnamed',
+      description,
+      tags,
+      songs: [] // song ids only
+    };
+    this.playlists.push(playlist);
+    this.persist();
+    return playlist.id;
+  }
+  getPlaylistById(id) {
+    const sid = Utils.id(id);
+    return this.playlists.find(p => Utils.id(p.id) === sid);
+  }
+  updatePlaylist(playlistId, updates) {
+    const pl = this.getPlaylistById(playlistId);
+    if (pl) Object.assign(pl, updates);
+    this.persist();
+  }
+
+
+
+
+///////////////////////////////////  H E L P E R S  //////
+//////////////////////////////////////////////////////////
   formatTime(s) { return Utils.formatTime(s); }
 
-
-
-
-  //  The rest of these need to REMAIN THE SAME ...
-  //  ... unless updating a reference that's used
   loadPersisted() {
     this.favoriteSongs   = this.parseStore(CONFIG.FAVOURITES.favSongs, []);
     this.favoriteArtists = this.parseStore(CONFIG.FAVOURITES.favArtists, []);
     this.favoriteAlbums  = this.parseStore(CONFIG.FAVOURITES.favAlbums, []);
 
     this.playlists = this.parseStore(CONFIG.FAVOURITES.playlists, []).map(pl => ({
-      id:          pl.id          || 'pl' + Date.now(),
+      id:          pl.id          || Utils.newId('pl'),
       name:        pl.name        || 'Unnamed',
       description: pl.description || '',
       tags:        pl.tags        || [],
-      songs:       pl.songs       || []   // now store song IDs
+      songs:       pl.songs       || []   // stored as song IDs
     }));
   }
   parseStore(key, fallback) {
@@ -241,12 +246,6 @@ class PlayerState {
     localStorage.setItem(CONFIG.FAVOURITES.favArtists, JSON.stringify(this.favoriteArtists));
     localStorage.setItem(CONFIG.FAVOURITES.favAlbums,  JSON.stringify(this.favoriteAlbums));
     localStorage.setItem(CONFIG.FAVOURITES.playlists,  JSON.stringify(this.playlists));
-  }
-
-  updatePlaylist(playlistId, updates) {
-    const pl = this.playlists.find(p => p.id === playlistId);
-    if (pl) Object.assign(pl, updates);
-    this.persist();
   }
 
   showToast(msg) {
@@ -319,16 +318,17 @@ class PlayerState {
     this.modalOverlay?.classList.remove('active');
     this.modalEl?.classList.remove('active');
   }
-///////////////////////  END   END   END   END//////////
-////////////////////////////////////////////////////////
+
+
+  //  Temporary for backwards compatibility
+  findArtistById(id)          { return this.getArtistById(id); }
+  findAlbumById(albumId)      { return this.getAlbumById(albumId); }
+  findSong(id)                { return this.getSongById(id); }
+//////////////////////////////////////////////////////////  
 }
 
 
 
-
-
-
-// ----- AudioEngine (unchanged except for using song objects with IDs) -----
 class AudioEngine {
   constructor(state) {
     this.state = state;
