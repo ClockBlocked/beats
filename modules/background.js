@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 const CONFIG = {
   IMAGE_BASE: {
     artist: '/beats/content/artistPortraits/',
@@ -22,7 +29,6 @@ const CONFIG = {
     default: 1.0
   }
 };
-
 const Utils = {
   slugify(name) {
     if (!name) return 'default';
@@ -54,21 +60,19 @@ class PlayerState {
   constructor() {
     this.enrichedLibrary = this.buildLibrary();
 
-    // Page state – store IDs instead of names
     this.currentPage        = 'home';
-    this.artistId           = null;       // numeric ID
-    this.artistPageName     = null;       // only for display
+    this.artistId           = null;
+    this.artistPageName     = null;
     this.selectedAlbumId    = null;
     this.selectedAlbumName  = null;
     this.isSearchOpen       = false;
     this.searchQuery        = '';
 
-    // Player state
-    this.currentSong   = null;      // full song object with ID, artistId, albumId
+    this.currentSong   = null;
     this.isPlaying     = false;
     this.currentTime   = 0;
     this.duration      = 0;
-    this.queue         = [];        // array of song objects (each has IDs)
+    this.queue         = [];
     this.queueIndex    = -1;
     this.recentlyPlayed = [];
     this.volume        = CONFIG.VOLUME.default;
@@ -81,11 +85,10 @@ class PlayerState {
     this.isQueueOpen   = false;
     this.isLyricsOpen  = false;
 
-    // Favourites & playlists – now store IDs
-    this.favoriteSongs   = [];   // song IDs
-    this.favoriteArtists = [];   // artist IDs
-    this.favoriteAlbums  = [];   // album IDs
-    this.playlists       = [];   // each playlist: { id, name, description, tags, songs: [songId, ...] }
+    this.favoriteSongs   = [];
+    this.favoriteArtists = [];
+    this.favoriteAlbums  = [];
+    this.playlists       = [];
 
     this.loadPersisted();
 
@@ -119,12 +122,10 @@ class PlayerState {
     });
   }
 
-  // ----- lookup helpers (all ID‑based) -----
   getArtistById(id) {
     const sid = Utils.id(id);
     return this.enrichedLibrary.find(a => Utils.id(a.id) === sid);
   }
-
   getAlbumById(id) {
     const sid = Utils.id(id);
     for (const artist of this.enrichedLibrary) {
@@ -133,7 +134,6 @@ class PlayerState {
     }
     return undefined;
   }
-
   getSongById(id) {
     const sid = Utils.id(id);
     for (const artist of this.enrichedLibrary) {
@@ -155,8 +155,6 @@ class PlayerState {
     }
     return undefined;
   }
-  
-
   getArtistByIdOrName(identifier) {
     if (!identifier) return undefined;
     // Try as ID first
@@ -165,12 +163,6 @@ class PlayerState {
     // Try as exact name match
     return this.enrichedLibrary.find(a => a.artist === identifier);
   }
-
-  // ... rest of class unchanged ...
-
-
-
-  // Get all songs with full metadata (including IDs)
   getAllSongs() {
     const all = [];
     for (const artist of this.enrichedLibrary) {
@@ -190,8 +182,6 @@ class PlayerState {
     }
     return all;
   }
-
-  // ----- deprecated name‑based methods (kept for backward compatibility) -----
   findArtist(name) {
     return this.enrichedLibrary.find(a => a.artist === name);
   }
@@ -202,8 +192,6 @@ class PlayerState {
     return artist.albums.find(a => Utils.id(a.id) === sid);
   }
   findSong(id) { return this.getSongById(id); }
-
-  // ----- ID helpers for URL generation -----
   getArtistId(name) {
     const artist = this.findArtist(name);
     return artist?.id || Utils.slugify(name);
@@ -214,6 +202,7 @@ class PlayerState {
     const album = artist.albums.find(a => a.album === albumName);
     return album?.id || Utils.slugify(albumName);
   }
+  
   getPlaylistId(name) {
     const pl = this.playlists.find(p => p.name === name);
     return pl?.id || Utils.slugify(name);
@@ -221,7 +210,11 @@ class PlayerState {
 
   formatTime(s) { return Utils.formatTime(s); }
 
-  // ----- Persistence (store IDs) -----
+
+
+
+  //  The rest of these need to REMAIN THE SAME ...
+  //  ... unless updating a reference that's used
   loadPersisted() {
     this.favoriteSongs   = this.parseStore(CONFIG.FAVOURITES.favSongs, []);
     this.favoriteArtists = this.parseStore(CONFIG.FAVOURITES.favArtists, []);
@@ -235,7 +228,6 @@ class PlayerState {
       songs:       pl.songs       || []   // now store song IDs
     }));
   }
-
   parseStore(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
@@ -244,7 +236,6 @@ class PlayerState {
       return fallback;
     }
   }
-
   persist() {
     localStorage.setItem(CONFIG.FAVOURITES.favSongs,   JSON.stringify(this.favoriteSongs));
     localStorage.setItem(CONFIG.FAVOURITES.favArtists, JSON.stringify(this.favoriteArtists));
@@ -258,7 +249,6 @@ class PlayerState {
     this.persist();
   }
 
-  // ----- UI helpers (toast, modal, loading bar) -----
   showToast(msg) {
     if (!this.toastEl) return;
     this.toastEl.textContent = msg;
@@ -289,7 +279,6 @@ class PlayerState {
       });
     });
   }
-
   loadingBarComplete() {
     clearInterval(this.loadingTimer);
     const elapsed = performance.now() - this.loadingStart;
@@ -310,7 +299,6 @@ class PlayerState {
       }, CONFIG.LOADING.fillMs);
     }, wait);
   }
-
   waitForProgress(target = 20) {
     return new Promise(resolve => {
       const check = () => {
@@ -327,12 +315,17 @@ class PlayerState {
     this.modalOverlay.classList.add('active');
     this.modalEl.classList.add('active');
   }
-
   modalClose() {
     this.modalOverlay?.classList.remove('active');
     this.modalEl?.classList.remove('active');
   }
+///////////////////////  END   END   END   END//////////
+////////////////////////////////////////////////////////
 }
+
+
+
+
 
 
 // ----- AudioEngine (unchanged except for using song objects with IDs) -----
