@@ -644,9 +644,12 @@ p {
 
 #breadcrumb-container {
   position: relative;
- /* top: 3.5rem;*/
-  z-index: 39;
-  background: transparent;margin-top: 3.5rem;
+ /* top: 3.5rem;
+  z-index: 39; */
+  background: transparent;
+  margin-top: 3.5rem;
+
+  height: 50px;
 }
 #breadcrumb-container .breadcrumb-trail {
   background: hsl(var(--dark) / 0.7);
@@ -661,6 +664,8 @@ p {
   overflow: hidden;
   transform: translateY(0);
   opacity: 1;
+
+  position: sticky; bottom: 0; z-index: 50;
 }
 #breadcrumb-container .breadcrumb-trail.hide {
   transform: translateY(-100%);
