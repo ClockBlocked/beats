@@ -320,10 +320,36 @@ class PlayerState {
   }
 
 
-  //  Temporary for backwards compatibility
-  findArtistById(id)          { return this.getArtistById(id); }
-  findAlbumById(albumId)      { return this.getAlbumById(albumId); }
-  findSong(id)                { return this.getSongById(id); }
+
+
+  
+//  Temporary for backwards compatibility
+findArtistById(id)          { return this.getArtistById(id); }
+findAlbumById(albumId)      { return this.getAlbumById(albumId); }
+findSong(id)                { return this.getSongById(id); }
+getArtistId(name) {
+  if (!name) return undefined;
+  const match = [...this.artistsById.values()].find(a => a.artist === name || String(a.id) === String(name));
+  return match ? match.id : undefined;
+}
+getAlbumId(artistIdentifier, albumName) {
+  if (!albumName) return undefined;
+  const artist = this.getArtistById(artistIdentifier) || this.getArtistById(this.getArtistId(artistIdentifier)) || [...this.artistsById.values()].find(a => a.artist === artistIdentifier);
+  if (!artist) {
+    for (const a of this.artistsById.values()) {
+      const alb = a.albums.find(x => x.album === albumName || String(x.id) === String(albumName));
+      if (alb) return alb.id;
+    }
+    return undefined;
+  }
+  const album = artist.albums.find(a => a.album === albumName || String(a.id) === String(albumName));
+  return album ? album.id : undefined;
+}
+getArtistByIdOrName(idOrName) {
+  const byId = this.getArtistById(idOrName);
+  if (byId) return byId;
+  return [...this.artistsById.values()].find(a => a.artist === idOrName || String(a.id) === String(idOrName));
+}
 //////////////////////////////////////////////////////////  
 }
 
