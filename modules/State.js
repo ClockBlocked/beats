@@ -4,8 +4,8 @@ class State {
   constructor() {
     // ==================== DATA ENRICHMENT ====================
     this.IMAGE_BASE_URLS = {
-      artist: 'https://mybeats.xo.je/content/artistPortraits/',
-      album: 'https://mybeats.xo.je/content/albumCovers/'
+      artist: '/content/artistPortraits/',
+      album: '/content/albumCovers/'
     };
     
     this.enrichedLibrary = this.buildEnrichedLibrary();
