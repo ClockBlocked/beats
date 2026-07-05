@@ -823,7 +823,8 @@ class ContentEventManager {
           const chip = document.createElement('span');
           chip.className = 'tag-chip px-3 py-1 rounded-full text-xs flex items-center gap-1 animate-fadeIn';
           chip.style.background = 'hsl(var(--bg-interactive))';
-          chip.innerHTML = `${newTag} <button class="remove-tag-btn hover:text-destructive transition-colors" data-tag="${newTag.replace(/"/g, '&quot;')}">\u00d7</button>`;
+          const safeTag = newTag.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          chip.innerHTML = `${safeTag} <button class="remove-tag-btn hover:text-destructive transition-colors" data-tag="${safeTag}">\u00d7</button>`;
           e.target.closest('.tags-container').insertBefore(chip, e.target);
           chip.querySelector('.remove-tag-btn').addEventListener('click', (ce) => {
             ce.stopPropagation();
