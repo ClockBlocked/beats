@@ -1,71 +1,7 @@
+// CONFIG and Utils moved to utilities.js.
+// PlayerState and AudioEngine continue using the global CONFIG/Utils
+// defined there because utilities.js loads first.
 
-
-
-
-
-
-
-const CONFIG = {
-  IMAGE_BASE: {
-    artist: '/beats/content/artistPortraits/',
-    album:  '/beats/content/albumCovers/'
-  },
-  FAVOURITES: {
-    favSongs:   'Songs',
-    favArtists: 'Artists',
-    favAlbums:  'Albums',
-    playlists:  'Playlists'
-  },
-  LOADING: {
-    minVisibleMs: 900,
-    extraDelayMs: 500,
-    settleMs:     400,
-    fillMs:       350
-  },
-  QUEUE: {
-    recentMax: 30
-  },
-  VOLUME: {
-    default: 1.0
-  }
-};
-
-const Utils = {
-  slugify(name) {
-    if (!name) return 'default';
-    return name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim() || 'default';
-  },
-  clamp(val, min, max) {
-    return Math.min(max, Math.max(min, val));
-  },
-  shuffled(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  },
-  formatTime(s) {
-    if (!s || !isFinite(s)) return '0:00';
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  },
-  // Normalizes any incoming id (number/string/null) to a canonical string
-  // key so every lookup map uses a single consistent key type.
-  id(val) {
-    return val == null ? '' : String(val);
-  },
-  // Generates a fresh, collision-resistant id for things the user creates
-  // at runtime (e.g. playlists). NEVER derived from a name.
-  newId(prefix = 'id') {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return `${prefix}_${crypto.randomUUID()}`;
-    }
-    return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-  }
-};
 
 class PlayerState {
   constructor() {
