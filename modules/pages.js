@@ -331,8 +331,11 @@ class Artists {
 
     return `
       <div class="artist-page animate-fadeInUp">
-        <div class="album-tabs-container">
-          <div class="album-tabs">
+
+      
+<div class="area albumTabs">
+        <div>
+          <div>
             ${artist.albums.map(alb => `
               <button data-dynamic="true"
                       class="album-tab ${alb.id === activeAlbum.id ? 'active' : ''}"
@@ -343,6 +346,8 @@ class Artists {
             `).join('')}
           </div>
         </div>
+</div><!---- A R E A ---- E N D ---->
+
 
         <div class="artist-header flex items-center gap-3 mb-4 px-4">
           <h1 class="text-3xl font-bold">${artist.artist}</h1>
