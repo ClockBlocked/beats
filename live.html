@@ -330,6 +330,7 @@ h1 {
   const statusText    = document.getElementById('status-text');
 
   const fab           = document.getElementById('fab');
+    const editor           = document.getElementById('editor');
   const fabBadge      = document.getElementById('fab-badge');
   const backdrop      = document.getElementById('backdrop');
   const sheet         = document.getElementById('sheet');
@@ -433,7 +434,7 @@ h1 {
     backdrop.classList.remove('show');
     sheet.classList.remove('show');
   }
-  fab.addEventListener('click', openSheet);
+  editor.addEventListener('click', openSheet);
   closeSheetBtn.addEventListener('click', closeSheet);
   backdrop.addEventListener('click', closeSheet);
 
