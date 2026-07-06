@@ -1,0 +1,507 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live CSS Preview</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#12151c;
+    --panel-2:#171b24;
+    --border:#242938;
+    --text:#e6e8ec;
+    --text-dim:#8b92a3;
+    --text-faint:#565d6e;
+    --accent:#2dd4bf;
+    --accent-dim:#1c8f81;
+    --warn:#fbbf24;
+    --err:#fb7185;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family:var(--sans);
+    overflow:hidden;
+  }
+  #app{
+    display:flex; flex-direction:column; height:100vh;
+  }
+
+  /* ---------- Toolbar (browser-chrome style) ---------- */
+  #toolbar{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .dots{display:flex; gap:6px; padding-right:4px;}
+  .dot{width:10px; height:10px; border-radius:50%;}
+  .dot.red{background:#fb7185;} .dot.yellow{background:#fbbf24;} .dot.green{background:#34d399;}
+
+  .icon-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:8px;
+    background:transparent; border:1px solid transparent;
+    color:var(--text-dim); cursor:pointer; flex-shrink:0;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .icon-btn:hover{background:var(--panel-2); color:var(--text); border-color:var(--border);}
+  .icon-btn svg{width:16px; height:16px;}
+
+  #address-form{
+    flex:1; display:flex; align-items:center; gap:8px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 6px 6px 14px;
+  }
+  #address-form svg.lock{width:13px; height:13px; color:var(--text-faint); flex-shrink:0;}
+  #url-input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-size:13.5px; font-family:var(--mono);
+    min-width:0;
+  }
+  #url-input::placeholder{color:var(--text-faint); font-family:var(--sans);}
+  #go-btn{
+    flex-shrink:0; border:none; cursor:pointer;
+    background:var(--accent); color:#00201c;
+    font-weight:600; font-size:12.5px;
+    padding:7px 14px; border-radius:999px;
+    transition:filter .15s;
+  }
+  #go-btn:hover{filter:brightness(1.08);}
+
+  #status-pill{
+    flex-shrink:0; display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:600; letter-spacing:.02em;
+    padding:6px 11px; border-radius:999px;
+    border:1px solid var(--border); color:var(--text-faint);
+    white-space:nowrap;
+  }
+  #status-pill .dot-status{width:6px; height:6px; border-radius:50%; background:var(--text-faint);}
+  #status-pill.ok{color:var(--accent); border-color:var(--accent-dim);}
+  #status-pill.ok .dot-status{background:var(--accent);}
+  #status-pill.blocked{color:var(--warn); border-color:#7a5b12;}
+  #status-pill.blocked .dot-status{background:var(--warn);}
+  #status-pill.idle{color:var(--text-faint);}
+
+  /* ---------- Main viewport ---------- */
+  #viewport{
+    position:relative; flex:1; min-height:0;
+    background:#000;
+  }
+  #frame{
+    width:100%; height:100%; border:none; background:#0e0e10;
+  }
+  #empty-state{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px;
+    color:var(--text-faint); text-align:center; padding:20px;
+    pointer-events:none;
+  }
+  #empty-state svg{width:34px; height:34px; opacity:.5; margin-bottom:4px;}
+  #empty-state h2{margin:0; font-size:15px; font-weight:600; color:var(--text-dim);}
+  #empty-state p{margin:0; font-size:13px; max-width:340px; line-height:1.5;}
+
+  /* ---------- FAB ---------- */
+  #fab{
+    position:absolute; bottom:22px; right:22px; z-index:30;
+    display:flex; align-items:center; gap:8px;
+    background:var(--accent); color:#00201c;
+    border:none; cursor:pointer;
+    padding:12px 18px 12px 14px; border-radius:999px;
+    font-weight:700; font-size:13.5px;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    transition:transform .15s, filter .15s;
+  }
+  #fab:hover{transform:translateY(-1px); filter:brightness(1.06);}
+  #fab svg{width:17px; height:17px;}
+  #fab .badge{
+    background:rgba(0,0,0,.22); border-radius:999px;
+    font-size:10.5px; padding:1px 7px; font-weight:700;
+  }
+
+  /* ---------- Offcanvas bottom sheet ---------- */
+  #backdrop{
+    position:absolute; inset:0; background:rgba(0,0,0,.55);
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+    z-index:40;
+  }
+  #backdrop.show{opacity:1; pointer-events:auto;}
+
+  #sheet{
+    position:absolute; left:0; right:0; bottom:0; z-index:50;
+    height:min(62vh, 620px);
+    background:var(--panel);
+    border-top:1px solid var(--border);
+    border-radius:18px 18px 0 0;
+    box-shadow:0 -12px 40px rgba(0,0,0,.5);
+    display:flex; flex-direction:column;
+    transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  #sheet.show{transform:translateY(0);}
+
+  #sheet-grip{
+    width:36px; height:4px; border-radius:999px;
+    background:var(--border); margin:10px auto 2px;
+    flex-shrink:0;
+  }
+
+  #sheet-header{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 18px 12px; flex-shrink:0;
+    border-bottom:1px solid var(--border);
+  }
+  #sheet-header h1{
+    font-size:14px; margin:0; font-weight:700; color:var(--text);
+    flex-shrink:0;
+  }
+  #sheet-status{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px;
+    border:1px solid var(--border); color:var(--text-faint);
+  }
+  #sheet-status.ok{color:var(--accent); border-color:var(--accent-dim); background:rgba(45,212,191,.08);}
+  #sheet-status.blocked{color:var(--warn); border-color:#7a5b12; background:rgba(251,191,36,.08);}
+  #sheet-status.err{color:var(--err); border-color:#7a2030; background:rgba(251,113,133,.08);}
+
+  #sheet-header .spacer{flex:1;}
+
+  #warning-banner{
+    display:none; gap:10px; align-items:flex-start;
+    margin:12px 18px 0; padding:10px 12px;
+    background:rgba(251,191,36,.08); border:1px solid #7a5b12;
+    border-radius:10px; font-size:12.5px; line-height:1.5; color:#f0d290;
+  }
+  #warning-banner.show{display:flex;}
+  #warning-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+
+  #sheet-body{
+    flex:1; min-height:0; padding:14px 18px; display:flex; flex-direction:column;
+  }
+  #css-input{
+    flex:1; width:100%; resize:none;
+    background:#0d1016; color:#d7f5ef;
+    border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; font-family:var(--mono); font-size:13px; line-height:1.6;
+    outline:none;
+  }
+  #css-input:focus{border-color:var(--accent-dim);}
+  #css-input::placeholder{color:var(--text-faint);}
+
+  #sheet-footer{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 18px 18px; flex-shrink:0;
+    border-top:1px solid var(--border);
+  }
+  #last-applied{
+    font-size:11.5px; color:var(--text-faint); flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .btn{
+    border:none; cursor:pointer; font-weight:600; font-size:12.5px;
+    padding:9px 15px; border-radius:9px;
+    display:flex; align-items:center; gap:6px;
+    transition:filter .15s, background .15s;
+  }
+  .btn svg{width:14px; height:14px;}
+  .btn-ghost{background:var(--panel-2); color:var(--text-dim); border:1px solid var(--border);}
+  .btn-ghost:hover{color:var(--text); background:#1d2230;}
+  .btn-primary{background:var(--accent); color:#00201c;}
+  .btn-primary:hover{filter:brightness(1.08);}
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:999px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (max-width:640px){
+    #sheet{height:78vh; border-radius:14px 14px 0 0;}
+    #fab span.label{display:none;}
+    #fab{padding:12px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+
+    <button class="icon-btn" id="refresh-btn" title="Reload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+    </button>
+
+    <form id="address-form">
+      <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <input id="url-input" type="text" placeholder="Enter a URL — e.g. localhost:3000 or your site's domain" autocomplete="off" spellcheck="false">
+      <button type="submit" id="go-btn">Load</button>
+    </form>
+
+    <button class="icon-btn" id="newtab-btn" title="Open in new tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+    </button>
+
+    <div id="status-pill" class="idle"><span class="dot-status"></span><span id="status-text">No page loaded</span></div>
+  </div>
+
+  <!-- Viewport -->
+  <div id="viewport">
+    <iframe id="frame" title="preview"></iframe>
+    <div id="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+      <h2>Nothing loaded yet</h2>
+      <p>Type a URL above and hit Load. Then open the Styles panel to write CSS and see it applied live, right here.</p>
+    </div>
+
+    <!-- FAB -->
+    <button id="fab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span class="label">Styles</span>
+      <span class="badge" id="fab-badge">0</span>
+    </button>
+
+    <!-- Offcanvas -->
+    <div id="backdrop"></div>
+    <div id="sheet">
+      <div id="sheet-grip"></div>
+      <div id="sheet-header">
+        <h1>Custom CSS</h1>
+        <span id="sheet-status" class="idle">Not applied</span>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="close-sheet" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="warning-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span id="warning-text">This site's browser security policy is blocking script access, so CSS can't be injected directly. This works reliably on sites you control (localhost, your own domain). Use "Copy CSS" and paste it into your site's stylesheet or your browser's DevTools instead.</span>
+      </div>
+
+      <div id="sheet-body">
+        <textarea id="css-input" placeholder="/* Write CSS here, e.g. */
+body {
+  background: #111 !important;
+}
+h1 {
+  font-family: Georgia, serif;
+}"></textarea>
+      </div>
+
+      <div id="sheet-footer">
+        <span id="last-applied">No styles applied yet</span>
+        <button class="btn btn-ghost" id="copy-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy CSS
+        </button>
+        <button class="btn btn-ghost" id="clear-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          Clear
+        </button>
+        <button class="btn btn-primary" id="save-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Save &amp; Apply
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const frame        = document.getElementById('frame');
+  const urlInput      = document.getElementById('url-input');
+  const addressForm   = document.getElementById('address-form');
+  const refreshBtn     = document.getElementById('refresh-btn');
+  const newTabBtn     = document.getElementById('newtab-btn');
+  const emptyState    = document.getElementById('empty-state');
+  const statusPill    = document.getElementById('status-pill');
+  const statusText    = document.getElementById('status-text');
+
+  const fab           = document.getElementById('fab');
+  const fabBadge      = document.getElementById('fab-badge');
+  const backdrop      = document.getElementById('backdrop');
+  const sheet         = document.getElementById('sheet');
+  const closeSheetBtn = document.getElementById('close-sheet');
+  const sheetStatus   = document.getElementById('sheet-status');
+  const warningBanner = document.getElementById('warning-banner');
+  const warningText   = document.getElementById('warning-text');
+  const cssInput      = document.getElementById('css-input');
+  const saveBtn       = document.getElementById('save-btn');
+  const copyBtn       = document.getElementById('copy-btn');
+  const clearBtn       = document.getElementById('clear-btn');
+  const lastApplied   = document.getElementById('last-applied');
+
+  const STYLE_TAG_ID = '__live_preview_injected_style__';
+  let currentUrl = '';
+  let hasAppliedOnce = false;
+
+  function normalizeUrl(raw){
+    let v = raw.trim();
+    if(!v) return '';
+    if(!/^https?:\/\//i.test(v)){
+      // allow localhost / IP without forcing https
+      if(/^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?(\/|$)/i.test(v)){
+        v = 'http://' + v;
+      } else {
+        v = 'https://' + v;
+      }
+    }
+    return v;
+  }
+
+  function setPill(mode, text){
+    statusPill.className = mode;
+    statusText.textContent = text;
+  }
+
+  function setSheetStatus(mode, text){
+    sheetStatus.className = mode;
+    sheetStatus.textContent = text;
+  }
+
+  function loadUrl(raw){
+    const url = normalizeUrl(raw);
+    if(!url) return;
+    currentUrl = url;
+    urlInput.value = url;
+    emptyState.style.display = 'none';
+    setPill('idle', 'Loading…');
+    frame.src = url;
+  }
+
+  addressForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    loadUrl(urlInput.value);
+  });
+
+  refreshBtn.addEventListener('click', function(){
+    if(currentUrl) frame.src = frame.src; else if(urlInput.value) loadUrl(urlInput.value);
+  });
+
+  newTabBtn.addEventListener('click', function(){
+    if(currentUrl) window.open(currentUrl, '_blank', 'noopener');
+  });
+
+  // Try to access the iframe document. Returns the document or null.
+  function getAccessibleDoc(){
+    try{
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      // accessing doc.domain-sensitive props to force the SecurityError if cross-origin
+      void doc.title;
+      return doc;
+    }catch(err){
+      return null;
+    }
+  }
+
+  frame.addEventListener('load', function(){
+    if(!currentUrl) return; // ignore initial blank frame
+    const doc = getAccessibleDoc();
+    if(doc){
+      setPill('ok', 'Same-origin — styles will apply live');
+      setSheetStatus('idle', hasAppliedOnce ? 'Ready' : 'Not applied');
+      warningBanner.classList.remove('show');
+      // re-apply existing CSS automatically after navigation/reload
+      if(cssInput.value.trim()){
+        applyStyle(true);
+      }
+    } else {
+      setPill('blocked', 'Cross-origin — direct injection blocked');
+      warningText.textContent = "This site's browser security policy is blocking script access, so CSS can't be injected directly. This works reliably on sites you control (localhost, your own domain). Use \"Copy CSS\" and paste it into your site's stylesheet or your browser's DevTools instead.";
+      warningBanner.classList.add('show');
+    }
+  });
+
+  // ---- Offcanvas open/close ----
+  function openSheet(){
+    backdrop.classList.add('show');
+    sheet.classList.add('show');
+  }
+  function closeSheet(){
+    backdrop.classList.remove('show');
+    sheet.classList.remove('show');
+  }
+  fab.addEventListener('click', openSheet);
+  closeSheetBtn.addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', closeSheet);
+
+  // ---- Apply / Save ----
+  function applyStyle(silent){
+    const css = cssInput.value;
+    const doc = getAccessibleDoc();
+
+    if(!doc){
+      setSheetStatus('err', 'Blocked');
+      warningText.textContent = "Can't apply — this site blocks cross-origin script access. Copy the CSS below and paste it into your site's stylesheet or DevTools instead.";
+      warningBanner.classList.add('show');
+      return false;
+    }
+
+    try{
+      let styleEl = doc.getElementById(STYLE_TAG_ID);
+      if(!styleEl){
+        styleEl = doc.createElement('style');
+        styleEl.id = STYLE_TAG_ID;
+        doc.head.appendChild(styleEl);
+      }
+      styleEl.textContent = css;
+      hasAppliedOnce = true;
+      warningBanner.classList.remove('show');
+      setSheetStatus('ok', 'Applied ✓');
+      const now = new Date();
+      lastApplied.textContent = 'Last applied at ' + now.toLocaleTimeString();
+      fabBadge.textContent = css.trim() ? css.split('\n').filter(l=>l.trim()).length + ' lines' : '0';
+      return true;
+    }catch(err){
+      setSheetStatus('err', 'Error');
+      warningText.textContent = 'Something went wrong applying the styles: ' + err.message;
+      warningBanner.classList.add('show');
+      return false;
+    }
+  }
+
+  saveBtn.addEventListener('click', function(){ applyStyle(false); });
+
+  clearBtn.addEventListener('click', function(){
+    cssInput.value = '';
+    const doc = getAccessibleDoc();
+    if(doc){
+      const styleEl = doc.getElementById(STYLE_TAG_ID);
+      if(styleEl) styleEl.textContent = '';
+    }
+    fabBadge.textContent = '0';
+    lastApplied.textContent = 'Styles cleared';
+    setSheetStatus('idle', 'Not applied');
+  });
+
+  copyBtn.addEventListener('click', function(){
+    navigator.clipboard.writeText(cssInput.value).then(function(){
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Copied';
+      setTimeout(function(){ copyBtn.innerHTML = original; }, 1400);
+    }).catch(function(){
+      alert('Could not copy automatically — select the text manually.');
+    });
+  });
+
+  // keyboard: Cmd/Ctrl+Enter applies while focused in textarea
+  cssInput.addEventListener('keydown', function(e){
+    if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
+      e.preventDefault();
+      applyStyle(false);
+    }
+  });
+})();
+</script>
+</body>
+</html>
