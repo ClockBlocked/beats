@@ -655,6 +655,8 @@ render() {
 
   ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
 </div>
+
+<div style="height: 200px;"></div>
   `;
 }
 
@@ -665,13 +667,19 @@ createSongRow(song, index, artist, album) {
     <div class="songItem ${isPlaying ? 'playing' : ''}"
          data-song-id="${song.id}"
          data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
+     
+     <div class="left">
       <div class="trackNum">${index + 1}</div>
       <div class="play">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
       </div>
-      <div class="songInner">
+     </div>
+     
+      <div class="center">
         <div class="title">${song.title}</div>
       </div>
+
+     <div class="right">
       <div class="time">${song.duration}</div>
       <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
         ${this.ui.likeStatus('song', isFav, false, null)}
@@ -679,6 +687,8 @@ createSongRow(song, index, artist, album) {
       <button class="moreMenu" data-more-song="${song.id}">
         ${Icons.general.moreVert(18)}
       </button>
+     </div>
+     
     </div>
   `;
 }
