@@ -616,7 +616,7 @@ render() {
     </div></div>
   </div>
 
-  <div data-area="songsList" class="heroWrap" style="position: absolute; top: 0;>
+  <div data-area="songsList" class="heroWrap">
     <div class="hero">
       <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
       <div class="heroScrim"></div>
