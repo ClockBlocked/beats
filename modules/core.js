@@ -639,40 +639,64 @@ class ContentEventManager {
     if (!song) return;
     const isFav = this.ui.favorites.isSongFavorite(songId);
     const menu = document.createElement('div');
-    menu.className = 'song-context-menu fixed z-50 rounded-xl p-2 animate-fadeInUp';
-    Object.assign(menu.style, { background: 'hsl(var(--bg-surface))', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)', minWidth: '180px', left: event.clientX + 'px', top: event.clientY + 'px' });
+    menu.className = 'song-context-menu';
+    menu.style.left = event.clientX + 'px';
+    menu.style.top = event.clientY + 'px';
     menu.innerHTML = `
-      <button class="context-item w-full text-left px-6 py-4 rounded-lg hover:bg-interactive transition-colors flex items-center gap-2" data-action="add-fav">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        ${isFav ? 'Remove from Favorites' : 'Add to Favorites'}
-      </button>
-      <button class="context-item w-full text-left px-4 py-2 rounded-lg hover:bg-interactive transition-colors flex items-center gap-2" data-action="add-playlist">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        Add to Playlist
-      </button>
-      <button class="context-item w-full text-left px-4 py-2 rounded-lg hover:bg-interactive transition-colors flex items-center gap-2" data-action="view-artist" data-artist-id="${song.artistId}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M5.3 18.3C6.8 16.5 9.2 15 12 15s5.2 1.5 6.7 3.3"/></svg>
-        View Artist
-      </button>
-      <button class="context-item w-full text-left px-4 py-2 rounded-lg hover:bg-interactive transition-colors flex items-center gap-2" data-action="view-album" data-artist-id="${song.artistId}" data-album-id="${song.albumId}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18"/><circle cx="12" cy="12" r="3"/></svg>
-        View Album
-      </button>
+      <div class="context-menu-header">
+        <span class="context-menu-song-title">${song.title}</span>
+        <span class="context-menu-song-artist">${song.artist || ''}</span>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-group">
+        <button class="context-menu-item" data-action="add-fav">
+          <span class="context-menu-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </span>
+          <span class="context-menu-label">${isFav ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+        </button>
+        <button class="context-menu-item" data-action="add-playlist">
+          <span class="context-menu-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </span>
+          <span class="context-menu-label">Add to Playlist</span>
+        </button>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-group">
+        <button class="context-menu-item" data-action="view-artist" data-artist-id="${song.artistId}">
+          <span class="context-menu-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.3 18.3C6.8 16.5 9.2 15 12 15s5.2 1.5 6.7 3.3"/></svg>
+          </span>
+          <span class="context-menu-label">View Artist</span>
+        </button>
+        <button class="context-menu-item" data-action="view-album" data-artist-id="${song.artistId}" data-album-id="${song.albumId}">
+          <span class="context-menu-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <span class="context-menu-label">View Album</span>
+        </button>
+      </div>
     `;
     document.body.appendChild(menu);
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
     if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
-    setTimeout(() => window.addEventListener('click', () => menu.remove(), { once: true }), 0);
+    requestAnimationFrame(() => menu.classList.add('context-menu-visible'));
+    const closeMenu = () => {
+      menu.classList.remove('context-menu-visible');
+      setTimeout(() => { if (menu.parentNode) menu.remove(); }, 200);
+    };
+    setTimeout(() => window.addEventListener('click', closeMenu, { once: true }), 0);
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
-      const action = e.target.closest('.context-item')?.dataset.action;
+      const action = e.target.closest('.context-menu-item')?.dataset.action;
       if (!action) return;
       if (action === 'add-fav') this.ui.favorites.toggleFavoriteSong(song);
       if (action === 'add-playlist') window.favoritesPlaylists.addToPlaylistModal(song);
       if (action === 'view-artist') this.ui.navigate('artist', song.artistId);
       if (action === 'view-album') this.ui.navigate('artist', song.artistId, song.albumId);
-      menu.remove();
+      closeMenu();
     });
   }
 
