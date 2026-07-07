@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 class Home {
   constructor(ui) { this.ui = ui; }
 
@@ -594,7 +601,7 @@ class Artists {
     ];
 
     return `
-      <div class="artist-page animate-fadeInUp">
+<div data-page="artist" class="artist-page animate-fadeInUp">
 
       
         <div class="area albumTabs">
@@ -611,45 +618,45 @@ class Artists {
         </div>
 
 
-        <div class="artist-hero">
-          <div class="artist-hero-cover">
-            <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}" class="artist-hero-img">
-            <div class="artist-hero-scrim"></div>
+        <div data-area="songsList" class="heroWrap">
+          <div class="hero">
+            <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}"">
+            <div class="heroScrim"></div>
           </div>
-          <div class="artist-hero-content">
-            <div class="artist-hero-meta">
-              <h1 class="artist-hero-name">${artist.artist}</h1>
+          <div class="heroBody">
+            <div class="metaData">
+              <h1 class="name">${artist.artist}</h1>
               <button class="artist-heart-btn ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
                       data-artist-heart="${artist.id}">
                 ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
               </button>
             </div>
-            <div class="artist-hero-album-info">
-              <h2 class="artist-hero-album">${activeAlbum.album}</h2>
-              <span class="artist-hero-stats">${activeAlbum.songs.length} tracks</span>
+            <div class="albumInfo">
+              <h2 class="name">${activeAlbum.album}</h2>
+              <span class="stats">${activeAlbum.songs.length} tracks</span>
             </div>
-            <button class="artist-hero-play"
+            <button class="play"
                     data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
               ${Icons.player.play(16)} Play All
             </button>
           </div>
         </div>
 
-        <div class="artist-tracklist">
-          <div class="artist-tracklist-header">
-            <div class="artist-tracklist-label">
-              <span class="artist-tracklist-tag">Track List</span>
-              <h3 class="artist-tracklist-title">Album cuts</h3>
+        <div class="songsList">
+          <div class="header">
+            <div class="subHeader">
+              <span class="tag">Track List</span>
+              <h3 class="title">Album cuts</h3>
             </div>
-            <span class="artist-tracklist-hint">Double click to play</span>
+            <span class="hint">Double click to play</span>
           </div>
-          <div class="artist-tracklist-body">
+          <div class="body">
             ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
           </div>
         </div>
 
         ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
-      </div>
+</div>
     `;
   }
 
@@ -657,21 +664,21 @@ class Artists {
     const isFav = this.ui.favorites.isSongFavorite(song.id);
     const isPlaying = this.ui.state.currentSong?.id == song.id;
     return `
-      <div class="song-item ${isPlaying ? 'playing' : ''}"
+      <div class="songItem ${isPlaying ? 'playing' : ''}"
            data-song-id="${song.id}"
            data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
-        <div class="song-number">${index + 1}</div>
-        <div class="song-play-btn">
+        <div class="trackNum">${index + 1}</div>
+        <div class="play">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
         </div>
-        <div class="song-title-cell">
-          <div class="song-title-text">${song.title}</div>
+        <div class="songInner">
+          <div class="title">${song.title}</div>
         </div>
-        <div class="song-duration">${song.duration}</div>
-        <button class="song-action-btn ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
+        <div class="time">${song.duration}</div>
+        <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
           ${this.ui.likeStatus('song', isFav, false, null)}
         </button>
-        <button class="song-action-btn" data-more-song="${song.id}">
+        <button class="moreMenu" data-more-song="${song.id}">
           ${Icons.general.moreVert(18)}
         </button>
       </div>
