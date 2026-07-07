@@ -611,41 +611,40 @@ class Artists {
         </div>
 
 
-        <div class="artist-header flex items-center gap-3 mb-4 px-4">
-          <h1 class="text-3xl font-bold">${artist.artist}</h1>
-          <button class="artist-heart-btn p-2 rounded-full hover:bg-interactive ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
-                  data-artist-heart="${artist.id}">
-            ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
-          </button>
+        <div class="artist-hero">
+          <div class="artist-hero-cover">
+            <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}" class="artist-hero-img">
+            <div class="artist-hero-scrim"></div>
+          </div>
+          <div class="artist-hero-content">
+            <div class="artist-hero-meta">
+              <h1 class="artist-hero-name">${artist.artist}</h1>
+              <button class="artist-heart-btn ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
+                      data-artist-heart="${artist.id}">
+                ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
+              </button>
+            </div>
+            <div class="artist-hero-album-info">
+              <h2 class="artist-hero-album">${activeAlbum.album}</h2>
+              <span class="artist-hero-stats">${activeAlbum.songs.length} tracks</span>
+            </div>
+            <button class="artist-hero-play"
+                    data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
+              ${Icons.player.play(16)} Play All
+            </button>
+          </div>
         </div>
 
-        <div class="album-display px-4 mb-6">
-          <div class="bento-grid grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)] gap-4 items-stretch">
-            <div class="album-cover-display bento-cover rounded-[28px] overflow-hidden relative min-h-[320px] lg:min-h-[480px]" style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-              <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}" class="w-full h-full object-cover absolute inset-0">
-              <div class="album-cover-fade"></div>
-              <div class="album-info-overlay absolute inset-x-0 bottom-0 p-6">
-                <h2 class="album-title">${activeAlbum.album}</h2>
-                <p class="album-meta">${artist.artist} • ${activeAlbum.songs.length} tracks</p>
-                <button class="play-all-btn mt-3 px-5 py-2 rounded-full font-semibold text-sm flex items-center gap-2"
-                        style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;"
-                        data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
-                  ${Icons.player.play(14)} Play All
-                </button>
-              </div>
+        <div class="artist-tracklist">
+          <div class="artist-tracklist-header">
+            <div class="artist-tracklist-label">
+              <span class="artist-tracklist-tag">Track List</span>
+              <h3 class="artist-tracklist-title">Album cuts</h3>
             </div>
-            <div class="bento-tracks rounded-[28px] p-4 lg:p-5" style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-              <div class="flex items-center justify-between mb-4 px-1">
-                <div>
-                  <p class="text-xs uppercase tracking-[0.25em]" style="color: hsl(var(--text-secondary));">Track List</p>
-                  <h3 class="text-lg font-bold">Album cuts</h3>
-                </div>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">Double click a row to play</p>
-              </div>
-              <div class="songs-list space-y-2">
-                ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
-              </div>
-            </div>
+            <span class="artist-tracklist-hint">Double click to play</span>
+          </div>
+          <div class="artist-tracklist-body">
+            ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
           </div>
         </div>
 
@@ -656,9 +655,9 @@ class Artists {
 
   createSongRow(song, index, artist, album) {
     const isFav = this.ui.favorites.isSongFavorite(song.id);
+    const isPlaying = this.ui.state.currentSong?.id == song.id;
     return `
-      <div class="song-item ${this.ui.state.currentSong?.id == song.id ? 'playing' : ''} rounded-2xl px-3 py-3"
-           style="background: hsl(var(--bg-interactive) / 0.35); border: 1px solid hsl(var(--border-subtle) / 0.12);"
+      <div class="song-item ${isPlaying ? 'playing' : ''}"
            data-song-id="${song.id}"
            data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
         <div class="song-number">${index + 1}</div>
