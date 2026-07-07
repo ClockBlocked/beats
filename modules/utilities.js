@@ -12,8 +12,8 @@
 // ═══════════════ CONFIG ═══════════════
 const CONFIG = {
   IMAGE_BASE: {
-    artist: '/beats/content/artistPortraits/',
-    album:  '/beats/content/albumCovers/'
+    artist: 'https://clockblocked.github.io/beats/content/artistPortraits/',
+    album:  'https://clockblocked.github.io/beats/content/albumCovers/'
   },
   FAVOURITES: {
     favSongs:   'Songs',
