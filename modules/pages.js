@@ -606,6 +606,11 @@ render() {
 
   <div data-area="songsList" class="heroWrap">
 
+
+  
+    <div class="hero">
+
+
   <div class="area albumTabs">
     <div><div>
       ${artist.albums.map(alb => `
@@ -618,8 +623,8 @@ render() {
       `).join('')}
     </div></div>
   </div>
-  
-    <div class="hero">
+
+    
       <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
       <div class="heroScrim"></div>
     </div>
