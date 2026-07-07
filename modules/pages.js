@@ -622,7 +622,7 @@ render() {
         </button>
       `).join('')}
     </div></div>
-  
+  </div>
 
     
       <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
@@ -646,7 +646,6 @@ render() {
       </button>
     </div>
   </div>
-</div>
 
   <div class="songsList">
     <div class="header">
