@@ -577,113 +577,111 @@ class Playlists {
 class Artists {
   constructor(ui) { this.ui = ui; }
 
-  render() {
-    const state = this.ui.state;
-    const artistId = state.artistId;
-    if (!artistId) return '<div>Artist not found</div>';
-    const artist = state.getArtistById(artistId);
-    if (!artist) return '<div>Artist not found</div>';
+render() {
+  const state = this.ui.state;
+  const artistId = state.artistId;
+  if (!artistId) return '<div>Artist not found</div>';
+  const artist = state.getArtistById(artistId);
+  if (!artist) return '<div>Artist not found</div>';
 
-    const activeAlbumId = state.selectedAlbumId;
-    const activeAlbum = activeAlbumId
-      ? artist.albums.find(a => IdUtils.normalize(a.id) === IdUtils.normalize(activeAlbumId))
-      : artist.albums[0];
-    if (!activeAlbum) return '<div>Album not found</div>';
+  const activeAlbumId = state.selectedAlbumId;
+  const activeAlbum = activeAlbumId
+    ? artist.albums.find(a => IdUtils.normalize(a.id) === IdUtils.normalize(activeAlbumId))
+    : artist.albums[0];
+  if (!activeAlbum) return '<div>Album not found</div>';
 
-    const similarIds = artist.similar || [];
-    const similarArtists = similarIds
-      .map(id => state.getArtistById(id))
-      .filter(Boolean);
-    const rows = [
-      similarArtists.slice(0, 4),
-      similarArtists.slice(4, 8),
-      similarArtists.slice(8, 12)
-    ];
+  const similarIds = artist.similar || [];
+  const similarArtists = similarIds
+    .map(id => state.getArtistById(id))
+    .filter(Boolean);
+  const rows = [
+    similarArtists.slice(0, 4),
+    similarArtists.slice(4, 8),
+    similarArtists.slice(8, 12)
+  ];
 
-    return `
+  return `
 <div data-page="artist" class="artist-page animate-fadeInUp">
 
-      
-        <div class="area albumTabs">
-          <div><div>
-            ${artist.albums.map(alb => `
-              <button data-dynamic="true"
-                      class="album-tab ${alb.id === activeAlbum.id ? 'active' : ''}"
-                      data-artist-id="${artist.id}"
-                      data-album-id="${alb.id}">
-                ${alb.album}
-              </button>
-            `).join('')}
-          </div></div>
-        </div>
-
-
-        <div data-area="songsList" class="heroWrap">
-          <div class="hero">
-            <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}"">
-            <div class="heroScrim"></div>
-          </div>
-          <div class="heroBody">
-            <div class="metaData">
-              <h1 class="name">${artist.artist}</h1>
-              <button class="artist-heart-btn ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
-                      data-artist-heart="${artist.id}">
-                ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
-              </button>
-            </div>
-            <div class="albumInfo">
-              <h2 class="name">${activeAlbum.album}</h2>
-              <span class="stats">${activeAlbum.songs.length} tracks</span>
-            </div>
-            <button class="play"
-                    data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
-              ${Icons.player.play(16)} Play All
-            </button>
-          </div>
-        </div>
-
-        <div class="songsList">
-          <div class="header">
-            <div class="subHeader">
-              <span class="tag">Track List</span>
-              <h3 class="title">Album cuts</h3>
-            </div>
-            <span class="hint">Double click to play</span>
-          </div>
-          <div class="body">
-            ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
-          </div>
-        </div>
-
-        ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
-</div>
-    `;
-  }
-
-  createSongRow(song, index, artist, album) {
-    const isFav = this.ui.favorites.isSongFavorite(song.id);
-    const isPlaying = this.ui.state.currentSong?.id == song.id;
-    return `
-      <div class="songItem ${isPlaying ? 'playing' : ''}"
-           data-song-id="${song.id}"
-           data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
-        <div class="trackNum">${index + 1}</div>
-        <div class="play">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-        </div>
-        <div class="songInner">
-          <div class="title">${song.title}</div>
-        </div>
-        <div class="time">${song.duration}</div>
-        <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
-          ${this.ui.likeStatus('song', isFav, false, null)}
+  <div class="area albumTabs">
+    <div><div>
+      ${artist.albums.map(alb => `
+        <button data-dynamic="true"
+                class="albumTab ${alb.id === activeAlbum.id ? 'active' : ''}"
+                data-artist-id="${artist.id}"
+                data-album-id="${alb.id}">
+          ${alb.album}
         </button>
-        <button class="moreMenu" data-more-song="${song.id}">
-          ${Icons.general.moreVert(18)}
+      `).join('')}
+    </div></div>
+  </div>
+
+  <div data-area="songsList" class="heroWrap">
+    <div class="hero">
+      <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
+      <div class="heroScrim"></div>
+    </div>
+    <div class="heroBody">
+      <div class="metaData">
+        <h1 class="name">${artist.artist}</h1>
+        <button class="artistHeartBtn ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
+                data-artist-heart="${artist.id}">
+          ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
         </button>
       </div>
-    `;
-  }
+      <div class="albumInfo">
+        <h2 class="name">${activeAlbum.album}</h2>
+        <span class="stats">${activeAlbum.songs.length} tracks</span>
+      </div>
+      <button class="play"
+              data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
+        ${Icons.player.play(16)} Play All
+      </button>
+    </div>
+  </div>
+
+  <div class="songsList">
+    <div class="header">
+      <div class="subHeader">
+        <span class="tag">Track List</span>
+        <h3 class="title">Album cuts</h3>
+      </div>
+      <span class="hint">Double click to play</span>
+    </div>
+    <div class="body">
+      ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
+    </div>
+  </div>
+
+  ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
+</div>
+  `;
+}
+
+createSongRow(song, index, artist, album) {
+  const isFav = this.ui.favorites.isSongFavorite(song.id);
+  const isPlaying = this.ui.state.currentSong?.id == song.id;
+  return `
+    <div class="songItem ${isPlaying ? 'playing' : ''}"
+         data-song-id="${song.id}"
+         data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
+      <div class="trackNum">${index + 1}</div>
+      <div class="play">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+      <div class="songInner">
+        <div class="title">${song.title}</div>
+      </div>
+      <div class="time">${song.duration}</div>
+      <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
+        ${this.ui.likeStatus('song', isFav, false, null)}
+      </button>
+      <button class="moreMenu" data-more-song="${song.id}">
+        ${Icons.general.moreVert(18)}
+      </button>
+    </div>
+  `;
+}
 
   similarMarquee(rows, artistId) {
     const configs = [['left', 40], ['right', 45], ['left', 35]];
