@@ -603,6 +603,9 @@ render() {
   return `
 <div data-page="artist" class="artist-page animate-fadeInUp">
 
+
+  <div data-area="songsList" class="heroWrap">
+
   <div class="area albumTabs">
     <div><div>
       ${artist.albums.map(alb => `
@@ -615,8 +618,7 @@ render() {
       `).join('')}
     </div></div>
   </div>
-
-  <div data-area="songsList" class="heroWrap">
+  
     <div class="hero">
       <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
       <div class="heroScrim"></div>
