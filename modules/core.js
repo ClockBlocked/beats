@@ -685,8 +685,7 @@ class ContentEventManager {
     requestAnimationFrame(() => menu.classList.add('context-menu-visible'));
     const closeMenu = () => {
       menu.classList.remove('context-menu-visible');
-      menu.addEventListener('transitionend', () => menu.remove(), { once: true });
-      setTimeout(() => menu.remove(), 200);
+      setTimeout(() => { if (menu.parentNode) menu.remove(); }, 200);
     };
     setTimeout(() => window.addEventListener('click', closeMenu, { once: true }), 0);
     menu.addEventListener('click', (e) => {
