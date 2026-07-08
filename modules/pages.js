@@ -707,7 +707,7 @@ createSongRow(song, index, artist, album) {
     `;
     return `
       <div class="similar-artists-section">
-        <h3 class="similar-artists-title">Similar Artists</h3>
+        <h5 class="similar-artists-title">Listen to similar Artists</h5>
         ${rows.map((row, i) => row.length ? marquee(row, ...configs[i]) : '').join('')}
       </div>
     `;
