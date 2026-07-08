@@ -658,7 +658,7 @@ render() {
 
   ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
 </div>
-
+</div>
 <div style="height: 200px;"></div>
   `;
 }
