@@ -603,7 +603,7 @@ render() {
   return `
 <div data-page="artist" class="artist-page animate-fadeInUp">
 
- <div class="stickyWrapper">
+ <div id="stickyWrapper">
   <div class="area albumTabs">
     <div><div>
       ${artist.albums.map(alb => `
