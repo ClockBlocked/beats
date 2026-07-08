@@ -644,10 +644,10 @@ render() {
   <div class="songsList">
     <div class="header">
       <div class="subHeader">
-        <span class="tag">Track List</span>
-        <h3 class="title">Album cuts</h3>
+        <span class="tag">Double Platinum</span>
+        <h5 class="title">2015</h5>
       </div>
-      <span class="hint">Double click to play</span>
+      <span class="hint">Double-click</span>
     </div>
     <div class="body">
       ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
