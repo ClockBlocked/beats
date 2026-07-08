@@ -603,7 +603,6 @@ render() {
   return `
 <div data-page="artist" class="artist-page animate-fadeInUp">
 
- <div id="stickyWrapper">
   <div class="area albumTabs">
     <div><div>
       ${artist.albums.map(alb => `
@@ -640,7 +639,6 @@ render() {
       </button>
     </div>
   </div>
- </div>
 
  
   <div class="songsList">
@@ -659,7 +657,7 @@ render() {
   ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
 </div>
 
-<div style="height: 200px;"></div>
+<div style="height: 300px;"></div>
   `;
 }
 
