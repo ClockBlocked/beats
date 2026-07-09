@@ -10,7 +10,7 @@ const path = require('path');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1'; // 0.0.0.0 exposes all interfaces; only use with strict firewall/proxy controls
+const HOST = process.env.HOST || '0.0.0.0'; // 0.0.0.0 exposes all interfaces; only use with strict firewall/proxy controls
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 const ttlHoursRaw = Number.parseFloat(process.env.FILE_TTL_HOURS || '6');
@@ -146,7 +146,7 @@ async function pruneOldDownloads() {
   }
 }
 
-app.get('/api/search', async (req, res) => {
+app.get('https://api.playbeats.us/search/', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) {
     return res.status(400).json({ error: 'Missing search query' });
@@ -161,7 +161,7 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
-app.post('/api/extract', async (req, res) => {
+app.post('https://api.playbeats.us/extract/', async (req, res) => {
   const url = String(req.body?.url || '').trim();
   if (!url) {
     return res.status(400).json({ error: 'Missing url' });
@@ -255,7 +255,7 @@ app.post('/api/extract', async (req, res) => {
   });
 });
 
-app.get('/api/status/:filename', (req, res) => {
+app.get('https://api.playbeats.us/saveFile/status/:filename', (req, res) => {
   const filename = safeFileName(req.params.filename);
   if (!filename) {
     return res.status(400).json({ error: 'Invalid filename' });
@@ -269,7 +269,7 @@ app.get('/api/status/:filename', (req, res) => {
   return res.json({ status: state.status, progress: state.progress ?? 0 });
 });
 
-app.get('/api/download/:filename', async (req, res) => {
+app.get('https://api.playbeats.us/saveFile/downloading:filename', async (req, res) => {
   const filename = safeFileName(req.params.filename);
   if (!filename) {
     return res.status(400).json({ error: 'Invalid filename' });
@@ -284,7 +284,7 @@ app.get('/api/download/:filename', async (req, res) => {
   }
 });
 
-app.get('/api/health', (_req, res) => {
+app.get('https://api.playbeats.us/health/', (_req, res) => {
   res.json({ ok: true, host: HOST, port: PORT });
 });
 
