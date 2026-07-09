@@ -863,11 +863,14 @@ class ContentEventManager {
     this.saveSession.resultState.set(index, { phase: 'extracting', progress: 10 });
     this.renderSearchResults();
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), YT_REQUEST_TIMEOUT_MS);
     try {
       const response = await fetch(`${YT_AUDIO_API_BASE}/api/extract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: selected.url })
+        body: JSON.stringify({ url: selected.url }),
+        signal: controller.signal
       });
       if (!response.ok) throw new Error('Extraction request failed');
       const payload = await response.json();
@@ -877,7 +880,9 @@ class ContentEventManager {
       console.error('[Save/Extract]', error);
       this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
       this.renderSearchResults();
-      this.ui.state.showToast('Could not extract audio for that video');
+      this.ui.state.showToast(error?.name === 'AbortError' ? 'Extraction request timed out' : 'Could not extract audio for that video');
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

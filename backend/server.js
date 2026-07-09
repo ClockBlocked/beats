@@ -10,7 +10,7 @@ const path = require('path');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1'; // use 0.0.0.0 only when intentionally exposing service externally
+const HOST = process.env.HOST || '127.0.0.1'; // 0.0.0.0 exposes all interfaces; only use with strict firewall/proxy controls
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 const ttlHoursRaw = Number.parseFloat(process.env.FILE_TTL_HOURS || '6');
