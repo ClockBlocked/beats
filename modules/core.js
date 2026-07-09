@@ -1,73 +1,69 @@
-/**
- * core.js — Navigation, page routing, search, event management, and icons.
- *
- * Contains:
- *   - Icons           — SVG icon library
- *   - Router          — page navigation & URL management with smooth breadcrumbs
- *   - AppListeners    — global, static, and dynamic event bindings
- *   - ContentEventManager — content-area event delegation
- *   - SearchManager   — search modal UI and results
- *
- * Dependencies: Utils, IdUtils, Icons (from utilities.js)
- */
+const YT_AUDIO_API_BASE = '/home/public/apps/youtube/audio';
+const YT_EXTRACT_TIMEOUT_MS = 120000;
+const YT_POLL_INTERVAL_MS = 1800;
+const YT_PROGRESS_MIN = 12;
+const YT_PROGRESS_MAX = 95;
+const YT_PROGRESS_STEP = 8;
+const YT_RESULT_MIN_FILL = 6;
+const YT_REQUEST_TIMEOUT_MS = 12000;
 
 class Icons {
   static hearts = {
     notLiked() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18">
-        <path opacity=".4" fill="currentColor" d="M32 165.1c0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7C196.1 79.6 165.6 64 133.1 64 77.3 64 32 109.3 32 165.1z"/>
-        <path fill="currentColor" fill-opacity="0.2" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1zM271 87.1c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 67.4-41.6 127.3-79.1 172.8-44.1 53.6-97.3 100.1-133.8 127.9-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C176.4 438 123.2 391.5 79.1 338 41.6 292.4 0 232.5 0 165.1 0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1l15 20.7 15-20.7z"/>
+        <path opacity=".4" fill="currentColor" d="M32 165.1c0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1z"/>
+        <path fill="currentColor" fill-opacity="0.2" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
     liked() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18">
-        <path opacity=".4" fill="currentColor" d="M32 165.1c0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7C196.1 79.6 165.6 64 133.1 64 77.3 64 32 109.3 32 165.1z"/>
-        <path fill="currentColor" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1zM271 87.1c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 67.4-41.6 127.3-79.1 172.8-44.1 53.6-97.3 100.1-133.8 127.9-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C176.4 438 123.2 391.5 79.1 338 41.6 292.4 0 232.5 0 165.1 0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1l15 20.7 15-20.7z"/>
+        <path opacity=".4" fill="currentColor" d="M32 165.1c0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1z"/>
+        <path fill="currentColor" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7 0 0c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
     likedConfirmation() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="20" height="20">
-        <path opacity=".4" fill="green" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 16-2.9 31.7-7.9 47.1-12.9-2.7-26.3-4.2-40.1-4.2-106 0-192 86-192 192 0 16.1 2 31.8 5.7 46.8-5.1-1.2-9.6-3.4-13.4-6.3-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
-        <path fill="green" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 3.8 2.9 8.4 5.1 13.4 6.3 2.9 11.5 6.8 22.6 11.7 33.2-.5 0-.9 0-1.4 0-15.6 0-30.8-4.6-43.1-14.1-36.5-27.9-89.7-74.4-133.8-127.9-37.5-45.5-79.1-105.5-79.1-172.8 0-73.5 59.6-133.1 133.1-133.1 42.7 0 82.8 20.5 107.9 55.1l15 20.7 15-20.7c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 19.4-3.5 38.3-9.3 56.3-9.8-3.9-20.1-7-30.6-9.2 5-15.4 7.9-31.1 7.9-47.1 0-55.9-45.3-101.1-101.1-101.1zM432 512a112 112 0 1 0 0-224 112 112 0 1 0 0 224zm0-256a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm57.4 83.1c7.1 5.2 8.7 15.2 3.5 22.4l-64 88c-2.8 3.8-7 6.2-11.7 6.5s-9.3-1.3-12.6-4.6l-40-40c-6.2-6.2-6.2-16.4 0-22.6s16.4-6.2 22.6 0l26.8 26.8 53-72.9c5.2-7.1 15.2-8.7 22.4-3.5z"/>
+        <path opacity=".4" fill="green" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 55-34.4 107.1-71.8 152.5-42.1 51.2-93.4 96-128.5 122.9-6.2 4.8-14.4 7.5-23.7 7.5s-17.4-2.7-23.7-7.5c-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
+        <path fill="green" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
     likedError() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="20" height="20">
-        <path opacity=".4" fill="orange" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 16-2.9 31.7-7.9 47.1-12.9-2.7-26.3-4.2-40.1-4.2-106 0-192 86-192 192 0 16.1 2 31.8 5.7 46.8-5.1-1.2-9.6-3.4-13.4-6.3-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
-        <path fill="orange" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 3.8 2.9 8.4 5.1 13.4 6.3 2.9 11.5 6.8 22.6 11.7 33.2-.5 0-.9 0-1.4 0-15.6 0-30.8-4.6-43.1-14.1-36.5-27.9-89.7-74.4-133.8-127.9-37.5-45.5-79.1-105.5-79.1-172.8 0-73.5 59.6-133.1 133.1-133.1 42.7 0 82.8 20.5 107.9 55.1l15 20.7 15-20.7c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 19.4-3.5 38.3-9.3 56.3-9.8-3.9-20.1-7-30.6-9.2 5-15.4 7.9-31.1 7.9-47.1 0-55.9-45.3-101.1-101.1-101.1zM544 400a112 112 0 1 0 -224 0 112 112 0 1 0 224 0zm-256 0a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144 44a20 20 0 1 1 0 40 20 20 0 1 1 0-40zm0-124c8.8 0 16 7.2 16 16l0 64c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64c0-8.8 7.2-16 16-16z"/>
+        <path opacity=".4" fill="orange" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 55-34.4 107.1-71.8 152.5-42.1 51.2-93.4 96-128.5 122.9-6.2 4.8-14.4 7.5-23.7 7.5s-17.4-2.7-23.7-7.5c-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
+        <path fill="orange" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
     likedRemove() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="20" height="20">
-        <path opacity=".4" fill="gray" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 16-2.9 31.7-7.9 47.1-12.9-2.7-26.3-4.2-40.1-4.2-106 0-192 86-192 192 0 16.1 2 31.8 5.7 46.8-5.1-1.2-9.6-3.4-13.4-6.3-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
-        <path fill="gray" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 3.8 2.9 8.4 5.1 13.4 6.3 2.9 11.5 6.8 22.6 11.7 33.2-.5 0-.9 0-1.4 0-15.6 0-30.8-4.6-43.1-14.1-36.5-27.9-89.7-74.4-133.8-127.9-37.5-45.5-79.1-105.5-79.1-172.8 0-73.5 59.6-133.1 133.1-133.1 42.7 0 82.8 20.5 107.9 55.1l15 20.7 15-20.7c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 19.4-3.5 38.3-9.3 56.3-9.8-3.9-20.1-7-30.6-9.2 5-15.4 7.9-31.1 7.9-47.1 0-55.9-45.3-101.1-101.1-101.1zM432 512a112 112 0 1 0 0-224 112 112 0 1 0 0 224zm0-256a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm80 144c0 8.8-7.2 16-16 16l-128 0c-8.8 0-16-7.2-16-16s7.2-16 16-16l128 0c8.8 0 16 7.2 16 16z"/>
+        <path opacity=".4" fill="gray" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 55-34.4 107.1-71.8 152.5-42.1 51.2-93.4 96-128.5 122.9-6.2 4.8-14.4 7.5-23.7 7.5s-17.4-2.7-23.7-7.5c-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
+        <path fill="gray" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
     likedHover() {
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="20" height="20">
-        <path opacity=".4" fill="pink" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 16-2.9 31.7-7.9 47.1-12.9-2.7-26.3-4.2-40.1-4.2-106 0-192 86-192 192 0 16.1 2 31.8 5.7 46.8-5.1-1.2-9.6-3.4-13.4-6.3-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
-        <path fill="pink" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 3.8 2.9 8.4 5.1 13.4 6.3 2.9 11.5 6.8 22.6 11.7 33.2-.5 0-.9 0-1.4 0-15.6 0-30.8-4.6-43.1-14.1-36.5-27.9-89.7-74.4-133.8-127.9-37.5-45.5-79.1-105.5-79.1-172.8 0-73.5 59.6-133.1 133.1-133.1 42.7 0 82.8 20.5 107.9 55.1l15 20.7 15-20.7c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 19.4-3.5 38.3-9.3 56.3-9.8-3.9-20.1-7-30.6-9.2 5-15.4 7.9-31.1 7.9-47.1 0-55.9-45.3-101.1-101.1-101.1zM544 400a112 112 0 1 0 -224 0 112 112 0 1 0 224 0zm-256 0a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm160-64l0 48 48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-48 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48-48 0c-8.8 0-16-7.2-16-16s7.2-16 16-16l48 0 0-48c0-8.8 7.2-16 16-16s16 7.2 16 16z"/>
+        <path opacity=".4" fill="pink" d="M32 165.1c0-55.9 45.3-101.1 101.1-101.1 32.4 0 62.9 15.6 81.9 41.9l28 38.7c3 4.2 7.8 6.6 13 6.6s10-2.5 13-6.6l28-38.7c19-26.3 49.5-41.9 81.9-41.9 55.9 0 101.1 45.3 101.1 101.1 0 55-34.4 107.1-71.8 152.5-42.1 51.2-93.4 96-128.5 122.9-6.2 4.8-14.4 7.5-23.7 7.5s-17.4-2.7-23.7-7.5c-35.1-26.8-86.4-71.7-128.5-122.9-37.3-45.4-71.8-97.5-71.8-152.5z"/>
+        <path fill="pink" d="M378.9 64c-32.4 0-62.9 15.6-81.9 41.9l-28 38.7c-3 4.2-7.8 6.6-13 6.6s-10-2.5-13-6.6l-28-38.7c-19-26.3-49.5-41.9-81.9-41.9-55.9 0-101.1 45.3-101.1 101.1 0 55 34.4 107.1 71.8 152.5 42.1 51.2 93.4 96 128.5 122.9 6.2 4.8 14.4 7.5 23.7 7.5s17.4-2.7 23.7-7.5c35.1-26.8 86.4-71.7 128.5-122.9 37.3-45.4 71.8-97.5 71.8-152.5 0-55.9-45.3-101.1-101.1-101.1z"/>
       </svg>`;
     },
   };
   static player = {
     play(size = 22) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6.7S32 57.9 32 72v368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6.7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1L91.2 36.9z"/><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6.7S32 57.9 32 72v368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6.7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1L91.2 36.9z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6.7S32 57.9 32 80v352c0 22.1 12.5 42.3 32.3 52.1s43.4 9.6 60.6-3.4l288-176c15.6-9.5 24.9-26.3 24.9-44.4s-9.3-34.9-24.9-44.4l-288-176C126.4 59.9 109.7 57 91.2 36.9z"/></svg>`;
     },
     pause(size = 22) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h64c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48H48zm224 0c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h64c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48h-64z"/><path fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h64c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48H48zm224 0c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h64c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48h-64z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h48c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h48c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48H240z"/></svg>`;
     },
     skipForward(size = 20) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 72L0 440c0 14.7 8.1 28.2 21 35.2s28.7 6.3 41-1.8l258-169.6 0-95.7-258-169.6c-12.3-8.1-28-8.8-41-1.8S0 57.3 0 72z"/><path fill="currentColor" d="M352 32l0 0c17.7 0 32 14.3 32 32l0 384c0 17.7-14.3 32-32 32l0 0c-17.7 0-32-14.3-32-32l0-384c0-17.7 14.3-32 32-32z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 72L0 440c0 14.7 8.1 28.2 21 35.2s28.7 6.3 41-1.5l274-168c13.6-8.3 21.9-23.1 21.9-39.2s-8.3-30.9-21.9-39.2L62 59.7c-12.3-7.5-27.7-7.5-41 0C8 67.9 0 81.5 0 96z"/></svg>`;
     },
     previous(size = 28) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M64 208.1l0 95.7 258 169.6c12.3 8.1 28 8.8 41 1.8s21-20.5 21-35.2l0-368c0-14.7-8.1-28.2-21-35.2s-28.7-6.3-41 1.8L64 208.1z"/><path fill="currentColor" d="M32 32l0 0C14.3 32 0 46.3 0 64L0 448c0 17.7 14.3 32 32 32l0 0c17.7 0 32-14.3 32-32L64 64c0-17.7-14.3-32-32-32z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M64 208.1l0 95.7 258 169.6c12.3 8.1 28 8.8 41 1.8s20.9-21.1 20.9-36.4L384 63.2c0-15.3-8-29.3-20.9-36.4s-28.7-6.3-41 1.8L64 198.1V88c0-22.1-17.9-40-40-40S-16 65.9-16 88v336c0 22.1 17.9 40 40 40s40-17.9 40-40v-155.9z"/></svg>`;
     },
     next(size = 28) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 72L0 440c0 14.7 8.1 28.2 21 35.2s28.7 6.3 41-1.8l258-169.6 0-95.7-258-169.6c-12.3-8.1-28-8.8-41-1.8S0 57.3 0 72z"/><path fill="currentColor" d="M352 32l0 0c17.7 0 32 14.3 32 32l0 384c0 17.7-14.3 32-32 32l0 0c-17.7 0-32-14.3-32-32l0-384c0-17.7 14.3-32 32-32z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 72L0 440c0 14.7 8.1 28.2 21 35.2s28.7 6.3 41-1.5l274-168c13.6-8.3 21.9-23.1 21.9-39.2s-8.3-30.9-21.9-39.2L62 59.7c-12.3-7.5-27.7-7.5-41 0C8 67.9 0 81.5 0 96z"/></svg>`;
     },
     shuffle(size = 22) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 384c0 17.7 14.3 32 32 32l64 0c30.2 0 58.7-14.2 76.8-38.4L224 309.3c-13.3-17.8-26.7-35.6-40-53.3l-62.4 83.2c-6 8.1-15.5 12.8-25.6 12.8l-64 0c-17.7 0-32 14.3-32 32zM224 202.7c13.3 17.8 26.7 35.6 40 53.3l62.4-83.2c6-8.1 15.5-12.8 25.6-12.8l32 0 0 32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c6-6 9.4-14.1 9.4-22.6s-3.4-16.6-9.4-22.6l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S384 51.1 384 64l0 32-32 0c-30.2 0-58.7 14.2-76.8 38.4L224 202.7z"/><path fill="currentColor" d="M352 416c-30.2 0-58.7-14.2-76.8-38.4L121.6 172.8c-6-8.1-15.5-12.8-25.6-12.8l-64 0c-17.7 0-32-14.3-32-32S14.3 96 32 96l64 0c30.2 0 58.7 14.2 76.8 38.4L326.4 339.2c6 8.1 15.5 12.8 25.6 12.8l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9S384 460.9 384 448l0-32-32 0z"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="${size}" height="${size}"><path opacity=".4" fill="currentColor" d="M0 384c0 17.7 14.3 32 32 32l64 0c30.2 0 58.7-14.2 76.8-38.2l20.3-27.6 27.6 20.3c22.3 16.4 50.1 25.6 78.7 25.6l80-48c-3.3-18.3-18.8-32-37.9-32l-42.1 0c-12.7 0-24.8-5.5-33.2-15.1L256 256l18.4-25.1c8.4-9.6 20.5-15.1 33.2-15.1l42.1 0c19.1 0 34.6-13.7 37.9-32l-80 48c-28.6 0-56.4-9.2-78.7-25.6l-27.6-20.3-20.3 27.6C154.7 257.8 126.2 272 96 272l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0c30.2 0 58.7-14.2 76.8-38.2l20.3-27.6 27.6 20.3c22.3 16.4 50.1 25.6 78.7 25.6l80 48c-3.3 18.3-18.8 32-37.9 32l-42.1 0c-12.7 0-24.8 5.5-33.2 15.1L256 336l-18.4 25.1c-8.4 9.6-20.5 15.1-33.2 15.1l-42.1 0c-19.1 0-34.6 13.7-37.9 32l80-48c28.6 0 56.4-9.2 78.7-25.6l27.6-20.3 20.3 27.6c18.1 24 46.6 38.2 76.8 38.2l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-30.2 0-58.7-14.2-76.8-38.2l-20.3-27.6-27.6 20.3c-22.3 16.4-50.1 25.6-78.7 25.6l-80 48c3.3-18.3 18.8-32 37.9-32l42.1 0c12.7 0 24.8-5.5 33.2-15.1L256 176l18.4 25.1c8.4 9.6 20.5 15.1 33.2 15.1l42.1 0c19.1 0 34.6 13.7 37.9 32l-80-48c-28.6 0-56.4 9.2-78.7 25.6l-27.6 20.3-20.3-27.6C182.7 126.2 211.2 112 241.4 112l64 0z"/></svg>`;
     },
   };
   static general = {
@@ -75,7 +71,7 @@ class Icons {
       return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
     },
     share(size = 18) {
-      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.5 10.2l7-3.8M8.5 13.8l7 3.8"/></svg>`;
     },
     moreHoriz(size = 18) {
       return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>`;
@@ -84,7 +80,7 @@ class Icons {
       return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a2 2 0 1 0-2-2 2 2 0 0 0 2 2zm0 2a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm0 6a2 2 0 1 0 2 2 2 2 0 0 0-2-2z"/></svg>`;
     },
     playlist(size = 36) {
-      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: hsl(var(--accent-coral));"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: hsl(var(--accent-coral));"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/></svg>`;
     },
     chevronDown() {
       return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"/></svg>`;
@@ -227,7 +223,6 @@ class Router {
     const crumbs = this.getBreadcrumbs();
     const existingItems = container.querySelectorAll('.breadcrumb-item, .breadcrumb-sep');
 
-    // Fade out existing items
     existingItems.forEach(el => {
       el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
       el.style.opacity = '0';
@@ -249,7 +244,6 @@ class Router {
           `;
         }).join('');
       }
-      // Trigger reflow then animate in
       requestAnimationFrame(() => {
         container.querySelectorAll('.breadcrumb-item, .breadcrumb-sep').forEach(el => {
           el.style.opacity = '1';
@@ -314,7 +308,6 @@ class Router {
 }
 
 class AppListeners {
-  // Global listeners (always active)
   static global(ui) {
     return [
       {
@@ -343,7 +336,6 @@ class AppListeners {
     ];
   }
 
-  // Static nav listeners (bound once)
   static static(ui) {
     const navButtons = document.querySelectorAll('.nav-link[data-nav]');
     return Array.from(navButtons).map(btn => ({
@@ -353,7 +345,6 @@ class AppListeners {
     }));
   }
 
-  // Init listeners (popstate, breadcrumb toggle, search triggers, theme, etc.)
   static init(ui) {
     return [
       {
@@ -396,7 +387,6 @@ class AppListeners {
         type: 'click',
         handler: () => ui.toggleTheme()
       },
-      // search input debounce
       {
         setup: (bind) => {
           const input = document.getElementById('search-input');
@@ -412,7 +402,6 @@ class AppListeners {
           }
         }
       },
-      // global key: escape / cmd+k
       {
         setup: (bind) => {
           const handler = (e) => {
@@ -423,7 +412,6 @@ class AppListeners {
           bind.push({ el: document, type: 'keydown', handler });
         }
       },
-      // theme initial
       {
         immediate: () => {
           const saved = localStorage.getItem('theme') || 'dark';
@@ -440,16 +428,14 @@ class AppListeners {
     ];
   }
 
-  // Dynamic listeners (content events)
   static add(ui) {
-    return []; // placeholder
+    return [];
   }
 
   static remove(ui) {
     return [];
   }
 
-  // Convenience: bind all static listeners at once
   static bindAll(ui) {
     const bindList = [];
     const attach = (arr) => {
@@ -476,6 +462,113 @@ class ContentEventManager {
   constructor(ui) {
     this.ui = ui;
     this.heartTimeouts = new Map();
+    this.saveHandlers = new WeakMap();
+    this.saveStorageKey = 'beats.savedSongs.v1';
+    this.hiddenSaveSongs = this.loadHiddenSaveSongs();
+    this.saveSession = {
+      activeSongId: null,
+      activeSongTitle: '',
+      activeKey: '',
+      hasFetched: false,
+      results: [],
+      resultState: new Map(),
+      isOpen: false
+    };
+    this.bindResetSaveControl();
+    this.ensureSaveOffcanvas();
+  }
+
+  normalizeSaveKey(song) {
+    const title = (song?.title || '').trim().toLowerCase();
+    const id = song?.id ? String(song.id) : '';
+    return id ? `id:${id}` : `title:${title}`;
+  }
+
+  loadHiddenSaveSongs() {
+    try {
+      const raw = localStorage.getItem(this.saveStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  persistHiddenSaveSongs() {
+    localStorage.setItem(this.saveStorageKey, JSON.stringify(Array.from(this.hiddenSaveSongs)));
+  }
+
+  bindResetSaveControl() {
+    const navActions = document.querySelector('.nav-actions');
+    if (!navActions) return;
+    let btn = document.getElementById('reset-save-songs-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'reset-save-songs-btn';
+      btn.className = 'reset-save-btn';
+      btn.type = 'button';
+      btn.textContent = 'Show Save buttons again';
+      navActions.prepend(btn);
+    }
+    if (!btn.dataset.boundReset) {
+      btn.dataset.boundReset = 'true';
+      btn.addEventListener('click', () => {
+        this.hiddenSaveSongs.clear();
+        localStorage.removeItem(this.saveStorageKey);
+        this.refreshSongSaveButtons();
+        this.ui.state.showToast('Save buttons restored');
+      });
+    }
+  }
+
+  ensureSaveOffcanvas() {
+    if (document.getElementById('yt-save-sheet')) return;
+    const shell = document.createElement('div');
+    shell.id = 'yt-save-shell';
+    shell.className = 'yt-save-shell';
+    shell.innerHTML = `
+      <div class="yt-save-backdrop" id="yt-save-backdrop"></div>
+      <section class="yt-save-sheet" id="yt-save-sheet" aria-hidden="true">
+        <header class="yt-save-head">
+          <div class="yt-save-meta">
+            <p class="yt-save-kicker">YouTube audio save</p>
+            <h3 id="yt-save-title">Pick a video</h3>
+          </div>
+          <button class="yt-save-close" id="yt-save-close" type="button" aria-label="Close save drawer">
+            ${Icons.general.close(18)}
+          </button>
+        </header>
+        <div class="yt-save-body" id="yt-save-body"></div>
+      </section>
+    `;
+    document.body.appendChild(shell);
+    const close = () => this.closeSaveOffcanvas();
+    shell.querySelector('#yt-save-close')?.addEventListener('click', close);
+    shell.querySelector('#yt-save-backdrop')?.addEventListener('click', close);
+  }
+
+  formatSaveDuration(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return 'Unknown';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hrs) return `${hrs}:${String(remMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  }
+
+  escapeHtml(text = '') {
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  getAbsoluteApiUrl(pathOrUrl) {
+    if (!pathOrUrl) return YT_AUDIO_API_BASE;
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    return `${YT_AUDIO_API_BASE}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
   }
 
   setupHeartButton(btn, type, id) {
@@ -536,6 +629,298 @@ class ContentEventManager {
     document.querySelectorAll('[data-artist-heart]').forEach(btn => {
       this.setupHeartButton(btn, 'artist', btn.dataset.artistHeart);
     });
+  }
+
+  refreshSongSaveButtons() {
+    document.querySelectorAll('[data-save-song]').forEach(btn => {
+      const songId = btn.dataset.saveSong;
+      const song = this.ui.state.getSongById(songId);
+      const key = this.normalizeSaveKey(song || { id: songId, title: btn.dataset.saveTitle || '' });
+      btn.classList.toggle('is-hidden', this.hiddenSaveSongs.has(key));
+    });
+  }
+
+  attachSongSaveEvents() {
+    document.querySelectorAll('[data-save-song]').forEach(btn => {
+      const songId = btn.dataset.saveSong;
+      const song = this.ui.state.getSongById(songId);
+      const key = this.normalizeSaveKey(song || { id: songId, title: btn.dataset.saveTitle || '' });
+      btn.classList.toggle('is-hidden', this.hiddenSaveSongs.has(key));
+      if (this.saveHandlers.has(btn)) return;
+      const handler = (event) => {
+        event.stopPropagation();
+        if (this.hiddenSaveSongs.has(key)) return;
+        const track = this.ui.state.getSongById(songId);
+        if (!track?.title) {
+          this.ui.state.showToast('Song details unavailable');
+          return;
+        }
+        this.openSaveOffcanvas(track);
+      };
+      btn.addEventListener('click', handler);
+      this.saveHandlers.set(btn, handler);
+    });
+  }
+
+  setSaveBody(content) {
+    const body = document.getElementById('yt-save-body');
+    if (body) body.innerHTML = content;
+  }
+
+  renderSaveLoading(message = 'Searching YouTube...') {
+    this.setSaveBody(`
+      <div class="yt-save-state">
+        <div class="yt-save-spinner"></div>
+        <p>${this.escapeHtml(message)}</p>
+      </div>
+    `);
+  }
+
+  renderSaveError(message = 'Something went wrong. Please try again.') {
+    this.setSaveBody(`
+      <div class="yt-save-state is-error">
+        <p>${this.escapeHtml(message)}</p>
+      </div>
+    `);
+  }
+
+  openSaveOffcanvas(song) {
+    this.ensureSaveOffcanvas();
+    const shell = document.getElementById('yt-save-shell');
+    const sheet = document.getElementById('yt-save-sheet');
+    const titleEl = document.getElementById('yt-save-title');
+    if (!shell || !sheet || !titleEl) return;
+
+    this.saveSession.activeSongId = song.id;
+    this.saveSession.activeSongTitle = song.title;
+    this.saveSession.activeKey = this.normalizeSaveKey(song);
+    this.saveSession.hasFetched = false;
+    this.saveSession.results = [];
+    this.saveSession.resultState = new Map();
+    this.saveSession.isOpen = true;
+
+    titleEl.textContent = song.title;
+    shell.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+    this.renderSaveLoading();
+    this.fetchSearchResults(song.title);
+  }
+
+  closeSaveOffcanvas() {
+    const shell = document.getElementById('yt-save-shell');
+    const sheet = document.getElementById('yt-save-sheet');
+    if (!shell || !sheet) return;
+    shell.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+    this.saveSession.isOpen = false;
+  }
+
+  async fetchSearchResults(query) {
+    if (!this.saveSession.isOpen || this.saveSession.hasFetched) return;
+    this.saveSession.hasFetched = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), YT_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${YT_AUDIO_API_BASE}/api/search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`Search failed (${response.status})`);
+      const json = await response.json();
+      if (!Array.isArray(json) || !json.length) {
+        this.renderSaveError('No matching videos found for this song.');
+        return;
+      }
+      this.saveSession.results = json;
+      this.renderSearchResults();
+    } catch (error) {
+      console.error('[Save/Search]', error);
+      const msg = error?.name === 'AbortError'
+        ? 'Search timed out. Please try again.'
+        : 'Could not load YouTube results. Please try again in a moment.';
+      this.renderSaveError(msg);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  renderSearchResults() {
+    const html = this.saveSession.results.map((item, index) => {
+      const state = this.saveSession.resultState.get(index) || { phase: 'idle', progress: 0 };
+      const progressValue = Number(state.progress);
+      const safeFill = Number.isFinite(progressValue)
+        ? Math.max(YT_RESULT_MIN_FILL, Math.min(100, progressValue))
+        : YT_RESULT_MIN_FILL;
+      const showOverlay = state.phase === 'confirm';
+      const showLoader = state.phase === 'extracting';
+      const showDownload = state.phase === 'ready';
+      return `
+        <article class="yt-result-card" data-yt-result="${index}">
+          <button class="yt-result-hit" type="button" data-yt-select="${index}">
+            <img class="yt-result-thumb" src="${this.escapeHtml(item.thumbnail || '')}" alt="${this.escapeHtml(item.title || 'YouTube video')}">
+            <div class="yt-result-copy">
+              <h4>${this.escapeHtml(item.title || 'Untitled video')}</h4>
+              <p>${this.escapeHtml(item.uploader || 'Unknown channel')}</p>
+            </div>
+            <span class="yt-result-time">${this.escapeHtml(typeof item.duration === 'number' ? this.formatSaveDuration(item.duration) : (item.duration || ''))}</span>
+          </button>
+          <div class="yt-result-confirm ${showOverlay ? 'open' : ''}" data-yt-confirm="${index}">
+            <p>Save audio from this video?</p>
+            <div class="yt-result-confirm-actions ${showLoader || showDownload ? 'is-hidden' : ''}">
+              <button type="button" class="yt-action-btn is-primary" data-yt-confirm-save="${index}">Save</button>
+              <button type="button" class="yt-action-btn" data-yt-confirm-cancel="${index}">Cancel</button>
+            </div>
+            <div class="yt-result-progress ${showLoader ? 'open' : ''}">
+              <div class="yt-result-progress-track">
+                <div class="yt-result-progress-fill" style="width:${safeFill}%;"></div>
+              </div>
+              <p>Preparing audio...</p>
+            </div>
+            <button type="button" class="yt-action-btn is-download ${showDownload ? 'open' : ''}" data-yt-download="${index}">
+              Download
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    this.setSaveBody(`<div class="yt-results-grid">${html}</div>`);
+    this.attachResultActions();
+  }
+
+  attachResultActions() {
+    document.querySelectorAll('[data-yt-select]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.ytSelect);
+        this.saveSession.resultState.forEach((value, key) => {
+          if (key !== idx && value.phase === 'confirm') value.phase = 'idle';
+        });
+        const current = this.saveSession.resultState.get(idx) || { phase: 'idle', progress: 0 };
+        if (current.phase === 'idle') current.phase = 'confirm';
+        this.saveSession.resultState.set(idx, current);
+        this.renderSearchResults();
+      });
+    });
+
+    document.querySelectorAll('[data-yt-confirm-cancel]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytConfirmCancel);
+        this.saveSession.resultState.set(idx, { phase: 'idle', progress: 0 });
+        this.renderSearchResults();
+      });
+    });
+
+    document.querySelectorAll('[data-yt-confirm-save]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytConfirmSave);
+        this.startExtractFlow(idx);
+      });
+    });
+
+    document.querySelectorAll('[data-yt-download]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytDownload);
+        this.handleDownload(idx);
+      });
+    });
+  }
+
+  async startExtractFlow(index) {
+    const selected = this.saveSession.results[index];
+    if (!selected?.url) {
+      this.ui.state.showToast('Video URL unavailable');
+      return;
+    }
+    this.saveSession.resultState.forEach((value, key) => {
+      if (key !== index && value.phase === 'confirm') value.phase = 'idle';
+    });
+    this.saveSession.resultState.set(index, { phase: 'extracting', progress: 10 });
+    this.renderSearchResults();
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), YT_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${YT_AUDIO_API_BASE}/api/extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: selected.url }),
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error('Extraction request failed');
+      const payload = await response.json();
+      if (!payload?.filename && !payload?.statusUrl) throw new Error('Invalid extraction payload');
+      await this.pollExtractStatus(index, payload);
+    } catch (error) {
+      console.error('[Save/Extract]', error);
+      this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+      this.renderSearchResults();
+      this.ui.state.showToast(error?.name === 'AbortError' ? 'Extraction request timed out' : 'Could not extract audio for that video');
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async pollExtractStatus(index, payload) {
+    const statusPath = payload.statusUrl || `/api/status/${encodeURIComponent(payload.filename)}`;
+    const statusUrl = this.getAbsoluteApiUrl(statusPath);
+    const timeoutMs = YT_EXTRACT_TIMEOUT_MS;
+    const started = Date.now();
+
+    while (Date.now() - started < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, YT_POLL_INTERVAL_MS));
+      const state = this.saveSession.resultState.get(index);
+      if (!state || state.phase !== 'extracting') return;
+      try {
+        const statusResponse = await fetch(statusUrl);
+        const statusPayload = await statusResponse.json();
+        if (!statusResponse.ok || statusPayload.status === 'failed') {
+          throw new Error(statusPayload.error || 'Status request failed');
+        }
+        const progress = Number(statusPayload.progress);
+        const safeProgress = Number.isFinite(progress)
+          ? Math.min(YT_PROGRESS_MAX, Math.max(YT_PROGRESS_MIN, progress))
+          : Math.min(YT_PROGRESS_MAX, (state.progress || YT_PROGRESS_MIN) + YT_PROGRESS_STEP);
+        this.saveSession.resultState.set(index, {
+          ...state,
+          phase: statusPayload.status === 'ready' ? 'ready' : 'extracting',
+          progress: statusPayload.status === 'ready' ? 100 : safeProgress,
+          payload
+        });
+        this.renderSearchResults();
+        if (statusPayload.status === 'ready') return;
+      } catch (error) {
+        console.error('[Save/Status]', error);
+        this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+        this.renderSearchResults();
+        this.ui.state.showToast('Could not process that video');
+        return;
+      }
+    }
+
+    this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+    this.renderSearchResults();
+    this.ui.state.showToast('Audio extraction timed out');
+  }
+
+  handleDownload(index) {
+    const state = this.saveSession.resultState.get(index);
+    const payload = state?.payload;
+    if (!payload) return;
+    const path = payload.downloadUrl || `/api/download/${encodeURIComponent(payload.filename)}`;
+    const href = this.getAbsoluteApiUrl(path);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = payload.filename || 'audio.mp3';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    this.hiddenSaveSongs.add(this.saveSession.activeKey);
+    this.persistHiddenSaveSongs();
+    this.refreshSongSaveButtons();
+    this.closeSaveOffcanvas();
   }
 
   showArtistPopover(artistId, event) {
@@ -890,6 +1275,8 @@ class ContentEventManager {
     }
 
     this.attachHeartEvents();
+    this.bindResetSaveControl();
+    this.attachSongSaveEvents();
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
