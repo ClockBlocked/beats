@@ -19,6 +19,7 @@ const YT_PROGRESS_MIN = 12;
 const YT_PROGRESS_MAX = 95;
 const YT_PROGRESS_STEP = 8;
 const YT_RESULT_MIN_FILL = 6;
+const YT_REQUEST_TIMEOUT_MS = 12000;
 
 class Icons {
   static hearts = {
@@ -741,8 +742,12 @@ class ContentEventManager {
   async fetchSearchResults(query) {
     if (!this.saveSession.isOpen || this.saveSession.hasFetched) return;
     this.saveSession.hasFetched = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), YT_REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(`${YT_AUDIO_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${YT_AUDIO_API_BASE}/api/search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal
+      });
       if (!response.ok) throw new Error(`Search failed (${response.status})`);
       const json = await response.json();
       if (!Array.isArray(json) || !json.length) {
@@ -753,13 +758,22 @@ class ContentEventManager {
       this.renderSearchResults();
     } catch (error) {
       console.error('[Save/Search]', error);
-      this.renderSaveError('Could not load YouTube results. Please try again in a moment.');
+      const msg = error?.name === 'AbortError'
+        ? 'Search timed out. Please try again.'
+        : 'Could not load YouTube results. Please try again in a moment.';
+      this.renderSaveError(msg);
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
   renderSearchResults() {
     const html = this.saveSession.results.map((item, index) => {
       const state = this.saveSession.resultState.get(index) || { phase: 'idle', progress: 0 };
+      const progressValue = Number(state.progress);
+      const safeFill = Number.isFinite(progressValue)
+        ? Math.max(YT_RESULT_MIN_FILL, Math.min(100, progressValue))
+        : YT_RESULT_MIN_FILL;
       const showOverlay = state.phase === 'confirm';
       const showLoader = state.phase === 'extracting';
       const showDownload = state.phase === 'ready';
@@ -781,7 +795,7 @@ class ContentEventManager {
             </div>
             <div class="yt-result-progress ${showLoader ? 'open' : ''}">
               <div class="yt-result-progress-track">
-                <div class="yt-result-progress-fill" style="width:${Math.max(YT_RESULT_MIN_FILL, Number(state.progress || 0))}%;"></div>
+                <div class="yt-result-progress-fill" style="width:${safeFill}%;"></div>
               </div>
               <p>Preparing audio...</p>
             </div>

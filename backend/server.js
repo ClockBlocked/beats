@@ -10,10 +10,12 @@ const path = require('path');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1'; // use 0.0.0.0 for direct external testing
+const HOST = process.env.HOST || '127.0.0.1'; // use 0.0.0.0 only when intentionally exposing service externally
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
-const FILE_TTL_MS = Number(process.env.FILE_TTL_HOURS || 6) * 60 * 60 * 1000; // keep extracted files for ~6h by default
+const ttlHoursRaw = Number.parseFloat(process.env.FILE_TTL_HOURS || '6');
+const FILE_TTL_HOURS = Number.isFinite(ttlHoursRaw) && ttlHoursRaw > 0 ? ttlHoursRaw : 6;
+const FILE_TTL_MS = FILE_TTL_HOURS * 60 * 60 * 1000; // keep extracted files for ~6h by default
 const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
 
 const extractionState = new Map();
@@ -59,6 +61,7 @@ function safeFileName(name = '') {
   const raw = String(name);
   const base = path.basename(raw);
   if (!base || base !== raw) return null;
+  if (base === '.' || base === '..' || base.startsWith('.')) return null;
   if (!/^[a-zA-Z0-9._-]+$/.test(base)) return null;
   return base;
 }
@@ -81,7 +84,7 @@ function searchYouTube(query) {
       '--dump-json',
       '--skip-download',
       '--no-playlist',
-      '--js-runtimes', 'node',
+      '--js-runtimes', 'node', // keeps YouTube JS extraction compatible on many VPS environments
       `ytsearch10:${query}`
     ];
 
@@ -163,7 +166,13 @@ app.post('/api/extract', async (req, res) => {
   if (!url) {
     return res.status(400).json({ error: 'Missing url' });
   }
-  if (!/^https?:\/\//i.test(url)) {
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return res.status(400).json({ error: 'Invalid url' });
+  }
+  if (!/^https?:$/i.test(parsedUrl.protocol)) {
     return res.status(400).json({ error: 'Invalid url' });
   }
 
@@ -280,7 +289,9 @@ app.get('/api/health', (_req, res) => {
 });
 
 setInterval(pruneOldDownloads, CLEANUP_INTERVAL_MS);
-pruneOldDownloads().catch(() => {});
+pruneOldDownloads().catch((error) => {
+  console.error('[cleanup:init]', error.message);
+});
 
 app.listen(PORT, HOST, () => {
   console.log(`Backend listening on http://${HOST}:${PORT}`);
