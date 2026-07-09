@@ -682,6 +682,9 @@ createSongRow(song, index, artist, album) {
 
      <div class="right">
       <div class="time">${song.duration}</div>
+      <button class="saveSongBtn" data-save-song="${song.id}" data-save-title="${song.title}">
+        Save
+      </button>
       <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
         ${this.ui.likeStatus('song', isFav, false, null)}
       </button>

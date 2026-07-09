@@ -1438,6 +1438,322 @@ border: 1px solid crimson;
   color: hsl(var(--destructive));
 }
 
+.saveSongBtn,
+.song-item [data-save-song] {
+  border: 1px solid hsl(var(--border-subtle) / 0.35);
+  background: hsl(var(--bg-interactive) / 0.7);
+  color: hsl(var(--text-primary));
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: opacity 0.22s ease, transform 0.22s ease, background 0.2s ease;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.songItem:hover .saveSongBtn,
+.song-item:hover [data-save-song] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.saveSongBtn:hover,
+.song-item [data-save-song]:hover {
+  background: hsl(var(--accent-coral) / 0.24);
+}
+
+.saveSongBtn.is-hidden,
+.song-item [data-save-song].is-hidden {
+  display: none;
+}
+
+.reset-save-btn {
+  border: 1px solid hsl(var(--border-subtle) / 0.3);
+  background: hsl(var(--bg-elevated) / 0.85);
+  color: hsl(var(--text-secondary));
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.38rem 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.reset-save-btn:hover {
+  color: hsl(var(--text-primary));
+  background: hsl(var(--bg-interactive));
+}
+
+.yt-save-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  pointer-events: none;
+}
+
+.yt-save-backdrop {
+  position: absolute;
+  inset: 0;
+  background: hsl(0 0% 0% / 0.48);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.yt-save-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: min(80vh, 660px);
+  transform: translateY(104%);
+  transition: transform 0.3s ease;
+  background: hsl(var(--bg-surface));
+  border-radius: 18px 18px 0 0;
+  border: 1px solid hsl(var(--border-subtle) / 0.25);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.yt-save-shell.open {
+  pointer-events: auto;
+}
+
+.yt-save-shell.open .yt-save-backdrop {
+  opacity: 1;
+}
+
+.yt-save-shell.open .yt-save-sheet {
+  transform: translateY(0);
+}
+
+.yt-save-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid hsl(var(--border-subtle) / 0.25);
+}
+
+.yt-save-kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: hsl(var(--text-tertiary));
+}
+
+.yt-save-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.yt-save-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--border-subtle) / 0.25);
+  color: hsl(var(--text-secondary));
+  transition: all 0.2s ease;
+}
+
+.yt-save-close:hover {
+  color: hsl(var(--text-primary));
+  background: hsl(var(--bg-interactive));
+}
+
+.yt-save-body {
+  overflow-y: auto;
+  padding: 1rem 1.2rem 1.6rem;
+}
+
+.yt-save-state {
+  min-height: 200px;
+  display: grid;
+  place-content: center;
+  gap: 0.9rem;
+  text-align: center;
+  color: hsl(var(--text-secondary));
+}
+
+.yt-save-state.is-error {
+  color: hsl(var(--destructive));
+}
+
+.yt-save-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--border-subtle));
+  border-top-color: hsl(var(--accent-coral));
+  animation: ytSpin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes ytSpin {
+  to { transform: rotate(360deg); }
+}
+
+.yt-results-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.yt-result-card {
+  position: relative;
+  border: 1px solid hsl(var(--border-subtle) / 0.26);
+  border-radius: 14px;
+  overflow: hidden;
+  background: hsl(var(--bg-elevated) / 0.75);
+}
+
+.yt-result-hit {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  text-align: left;
+}
+
+.yt-result-thumb {
+  width: 96px;
+  height: 58px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: hsl(var(--bg-interactive));
+}
+
+.yt-result-copy h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.yt-result-copy p {
+  font-size: 0.77rem;
+  color: hsl(var(--text-secondary));
+  margin-top: 0.22rem;
+}
+
+.yt-result-time {
+  font-size: 0.73rem;
+  color: hsl(var(--text-tertiary));
+}
+
+.yt-result-confirm {
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--bg-body) / 0.93);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: all 0.24s ease;
+  padding: 0.9rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.yt-result-confirm.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.yt-result-confirm p {
+  font-weight: 600;
+}
+
+.yt-result-confirm-actions {
+  display: inline-flex;
+  gap: 0.55rem;
+  transition: opacity 0.2s ease;
+}
+
+.yt-result-confirm-actions.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.yt-action-btn {
+  border: 1px solid hsl(var(--border-subtle) / 0.3);
+  background: hsl(var(--bg-elevated));
+  border-radius: 999px;
+  padding: 0.38rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.yt-action-btn.is-primary {
+  background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink)));
+  color: white;
+  border-color: transparent;
+}
+
+.yt-result-progress {
+  width: min(100%, 260px);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.yt-result-progress.open {
+  opacity: 1;
+  max-height: 80px;
+}
+
+.yt-result-progress-track {
+  width: 100%;
+  height: 8px;
+  background: hsl(var(--bg-interactive));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.yt-result-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, hsl(var(--accent-coral)), hsl(var(--accent-pink)));
+  transition: width 0.35s ease;
+}
+
+.yt-result-progress p {
+  font-size: 0.74rem;
+  color: hsl(var(--text-secondary));
+  margin-top: 0.35rem;
+}
+
+.yt-action-btn.is-download {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+}
+
+.yt-action-btn.is-download.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  background: hsl(var(--bg-elevated));
+}
+
 .similar-artists-section {
   margin-top: 3rem;
   padding: 0 0.5rem;

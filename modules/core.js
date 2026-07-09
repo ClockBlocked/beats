@@ -11,6 +11,9 @@
  * Dependencies: Utils, IdUtils, Icons (from utilities.js)
  */
 
+// Change this one value when moving from VPS IP to your real domain/tunnel URL.
+const YT_AUDIO_API_BASE = 'http://185.27.135.91';
+
 class Icons {
   static hearts = {
     notLiked() {
@@ -476,6 +479,113 @@ class ContentEventManager {
   constructor(ui) {
     this.ui = ui;
     this.heartTimeouts = new Map();
+    this.saveHandlers = new WeakMap();
+    this.saveStorageKey = 'beats.savedSongs.v1';
+    this.hiddenSaveSongs = this.loadHiddenSaveSongs();
+    this.saveSession = {
+      activeSongId: null,
+      activeSongTitle: '',
+      activeKey: '',
+      hasFetched: false,
+      results: [],
+      resultState: new Map(),
+      isOpen: false
+    };
+    this.bindResetSaveControl();
+    this.ensureSaveOffcanvas();
+  }
+
+  normalizeSaveKey(song) {
+    const title = (song?.title || '').trim().toLowerCase();
+    const id = song?.id ? String(song.id) : '';
+    return id ? `id:${id}` : `title:${title}`;
+  }
+
+  loadHiddenSaveSongs() {
+    try {
+      const raw = localStorage.getItem(this.saveStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  persistHiddenSaveSongs() {
+    localStorage.setItem(this.saveStorageKey, JSON.stringify(Array.from(this.hiddenSaveSongs)));
+  }
+
+  bindResetSaveControl() {
+    const navActions = document.querySelector('.nav-actions');
+    if (!navActions) return;
+    let btn = document.getElementById('reset-save-songs-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'reset-save-songs-btn';
+      btn.className = 'reset-save-btn';
+      btn.type = 'button';
+      btn.textContent = 'Show Save buttons again';
+      navActions.prepend(btn);
+    }
+    if (!btn.dataset.boundReset) {
+      btn.dataset.boundReset = 'true';
+      btn.addEventListener('click', () => {
+        this.hiddenSaveSongs.clear();
+        localStorage.removeItem(this.saveStorageKey);
+        this.refreshSongSaveButtons();
+        this.ui.state.showToast('Save buttons restored');
+      });
+    }
+  }
+
+  ensureSaveOffcanvas() {
+    if (document.getElementById('yt-save-sheet')) return;
+    const shell = document.createElement('div');
+    shell.id = 'yt-save-shell';
+    shell.className = 'yt-save-shell';
+    shell.innerHTML = `
+      <div class="yt-save-backdrop" id="yt-save-backdrop"></div>
+      <section class="yt-save-sheet" id="yt-save-sheet" aria-hidden="true">
+        <header class="yt-save-head">
+          <div class="yt-save-meta">
+            <p class="yt-save-kicker">YouTube audio save</p>
+            <h3 id="yt-save-title">Pick a video</h3>
+          </div>
+          <button class="yt-save-close" id="yt-save-close" type="button" aria-label="Close save drawer">
+            ${Icons.general.close(18)}
+          </button>
+        </header>
+        <div class="yt-save-body" id="yt-save-body"></div>
+      </section>
+    `;
+    document.body.appendChild(shell);
+    const close = () => this.closeSaveOffcanvas();
+    shell.querySelector('#yt-save-close')?.addEventListener('click', close);
+    shell.querySelector('#yt-save-backdrop')?.addEventListener('click', close);
+  }
+
+  formatSaveDuration(sec) {
+    if (!Number.isFinite(sec) || sec <= 0) return 'Unknown';
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hrs) return `${hrs}:${String(remMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  }
+
+  escapeHtml(text = '') {
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  getAbsoluteApiUrl(pathOrUrl) {
+    if (!pathOrUrl) return YT_AUDIO_API_BASE;
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    return `${YT_AUDIO_API_BASE}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
   }
 
   setupHeartButton(btn, type, id) {
@@ -536,6 +646,278 @@ class ContentEventManager {
     document.querySelectorAll('[data-artist-heart]').forEach(btn => {
       this.setupHeartButton(btn, 'artist', btn.dataset.artistHeart);
     });
+  }
+
+  refreshSongSaveButtons() {
+    document.querySelectorAll('[data-save-song]').forEach(btn => {
+      const songId = btn.dataset.saveSong;
+      const song = this.ui.state.getSongById(songId);
+      const key = this.normalizeSaveKey(song || { id: songId, title: btn.dataset.saveTitle || '' });
+      btn.classList.toggle('is-hidden', this.hiddenSaveSongs.has(key));
+    });
+  }
+
+  attachSongSaveEvents() {
+    document.querySelectorAll('[data-save-song]').forEach(btn => {
+      const songId = btn.dataset.saveSong;
+      const song = this.ui.state.getSongById(songId);
+      const key = this.normalizeSaveKey(song || { id: songId, title: btn.dataset.saveTitle || '' });
+      btn.classList.toggle('is-hidden', this.hiddenSaveSongs.has(key));
+      if (this.saveHandlers.has(btn)) return;
+      const handler = (event) => {
+        event.stopPropagation();
+        if (this.hiddenSaveSongs.has(key)) return;
+        const track = this.ui.state.getSongById(songId);
+        if (!track?.title) {
+          this.ui.state.showToast('Song details unavailable');
+          return;
+        }
+        this.openSaveOffcanvas(track);
+      };
+      btn.addEventListener('click', handler);
+      this.saveHandlers.set(btn, handler);
+    });
+  }
+
+  setSaveBody(content) {
+    const body = document.getElementById('yt-save-body');
+    if (body) body.innerHTML = content;
+  }
+
+  renderSaveLoading(message = 'Searching YouTube...') {
+    this.setSaveBody(`
+      <div class="yt-save-state">
+        <div class="yt-save-spinner"></div>
+        <p>${this.escapeHtml(message)}</p>
+      </div>
+    `);
+  }
+
+  renderSaveError(message = 'Something went wrong. Please try again.') {
+    this.setSaveBody(`
+      <div class="yt-save-state is-error">
+        <p>${this.escapeHtml(message)}</p>
+      </div>
+    `);
+  }
+
+  openSaveOffcanvas(song) {
+    this.ensureSaveOffcanvas();
+    const shell = document.getElementById('yt-save-shell');
+    const sheet = document.getElementById('yt-save-sheet');
+    const titleEl = document.getElementById('yt-save-title');
+    if (!shell || !sheet || !titleEl) return;
+
+    this.saveSession.activeSongId = song.id;
+    this.saveSession.activeSongTitle = song.title;
+    this.saveSession.activeKey = this.normalizeSaveKey(song);
+    this.saveSession.hasFetched = false;
+    this.saveSession.results = [];
+    this.saveSession.resultState = new Map();
+    this.saveSession.isOpen = true;
+
+    titleEl.textContent = song.title;
+    shell.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+    this.renderSaveLoading();
+    this.fetchSearchResults(song.title);
+  }
+
+  closeSaveOffcanvas() {
+    const shell = document.getElementById('yt-save-shell');
+    const sheet = document.getElementById('yt-save-sheet');
+    if (!shell || !sheet) return;
+    shell.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+    this.saveSession.isOpen = false;
+  }
+
+  async fetchSearchResults(query) {
+    if (!this.saveSession.isOpen || this.saveSession.hasFetched) return;
+    this.saveSession.hasFetched = true;
+    try {
+      const response = await fetch(`${YT_AUDIO_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) throw new Error('Search failed');
+      const json = await response.json();
+      if (!Array.isArray(json) || !json.length) {
+        this.renderSaveError('No matching videos found for this song.');
+        return;
+      }
+      this.saveSession.results = json;
+      this.renderSearchResults();
+    } catch (error) {
+      console.error('[Save/Search]', error);
+      this.renderSaveError('Could not load YouTube results. Please try again in a moment.');
+    }
+  }
+
+  renderSearchResults() {
+    const html = this.saveSession.results.map((item, index) => {
+      const state = this.saveSession.resultState.get(index) || { phase: 'idle', progress: 0 };
+      const showOverlay = state.phase === 'confirm';
+      const showLoader = state.phase === 'extracting';
+      const showDownload = state.phase === 'ready';
+      return `
+        <article class="yt-result-card" data-yt-result="${index}">
+          <button class="yt-result-hit" type="button" data-yt-select="${index}">
+            <img class="yt-result-thumb" src="${this.escapeHtml(item.thumbnail || '')}" alt="${this.escapeHtml(item.title || 'YouTube video')}">
+            <div class="yt-result-copy">
+              <h4>${this.escapeHtml(item.title || 'Untitled video')}</h4>
+              <p>${this.escapeHtml(item.uploader || 'Unknown channel')}</p>
+            </div>
+            <span class="yt-result-time">${this.escapeHtml(typeof item.duration === 'number' ? this.formatSaveDuration(item.duration) : (item.duration || ''))}</span>
+          </button>
+          <div class="yt-result-confirm ${showOverlay ? 'open' : ''}" data-yt-confirm="${index}">
+            <p>Save audio from this video?</p>
+            <div class="yt-result-confirm-actions ${showLoader || showDownload ? 'is-hidden' : ''}">
+              <button type="button" class="yt-action-btn is-primary" data-yt-confirm-save="${index}">Save</button>
+              <button type="button" class="yt-action-btn" data-yt-confirm-cancel="${index}">Cancel</button>
+            </div>
+            <div class="yt-result-progress ${showLoader ? 'open' : ''}">
+              <div class="yt-result-progress-track">
+                <div class="yt-result-progress-fill" style="width:${Math.max(6, Number(state.progress || 0))}%;"></div>
+              </div>
+              <p>Preparing audio...</p>
+            </div>
+            <button type="button" class="yt-action-btn is-download ${showDownload ? 'open' : ''}" data-yt-download="${index}">
+              Download
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    this.setSaveBody(`<div class="yt-results-grid">${html}</div>`);
+    this.attachResultActions();
+  }
+
+  attachResultActions() {
+    document.querySelectorAll('[data-yt-select]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.ytSelect);
+        this.saveSession.resultState.forEach((value, key) => {
+          if (key !== idx && value.phase === 'confirm') value.phase = 'idle';
+        });
+        const current = this.saveSession.resultState.get(idx) || { phase: 'idle', progress: 0 };
+        if (current.phase === 'idle') current.phase = 'confirm';
+        this.saveSession.resultState.set(idx, current);
+        this.renderSearchResults();
+      });
+    });
+
+    document.querySelectorAll('[data-yt-confirm-cancel]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytConfirmCancel);
+        this.saveSession.resultState.set(idx, { phase: 'idle', progress: 0 });
+        this.renderSearchResults();
+      });
+    });
+
+    document.querySelectorAll('[data-yt-confirm-save]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytConfirmSave);
+        this.startExtractFlow(idx);
+      });
+    });
+
+    document.querySelectorAll('[data-yt-download]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const idx = Number(btn.dataset.ytDownload);
+        this.handleDownload(idx);
+      });
+    });
+  }
+
+  async startExtractFlow(index) {
+    const selected = this.saveSession.results[index];
+    if (!selected?.url) {
+      this.ui.state.showToast('Video URL unavailable');
+      return;
+    }
+    this.saveSession.resultState.forEach((value, key) => {
+      if (key !== index && value.phase === 'confirm') value.phase = 'idle';
+    });
+    this.saveSession.resultState.set(index, { phase: 'extracting', progress: 10 });
+    this.renderSearchResults();
+
+    try {
+      const response = await fetch(`${YT_AUDIO_API_BASE}/api/extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: selected.url })
+      });
+      if (!response.ok) throw new Error('Extraction request failed');
+      const payload = await response.json();
+      if (!payload?.filename && !payload?.statusUrl) throw new Error('Invalid extraction payload');
+      await this.pollExtractStatus(index, payload);
+    } catch (error) {
+      console.error('[Save/Extract]', error);
+      this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+      this.renderSearchResults();
+      this.ui.state.showToast('Could not extract audio for that video');
+    }
+  }
+
+  async pollExtractStatus(index, payload) {
+    const statusPath = payload.statusUrl || `/api/status/${encodeURIComponent(payload.filename)}`;
+    const statusUrl = this.getAbsoluteApiUrl(statusPath);
+    const timeoutMs = 120000;
+    const started = Date.now();
+
+    while (Date.now() - started < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      const state = this.saveSession.resultState.get(index);
+      if (!state || state.phase !== 'extracting') return;
+      try {
+        const statusResponse = await fetch(statusUrl);
+        const statusPayload = await statusResponse.json();
+        if (!statusResponse.ok || statusPayload.status === 'failed') {
+          throw new Error(statusPayload.error || 'Status request failed');
+        }
+        const progress = Number(statusPayload.progress);
+        const safeProgress = Number.isFinite(progress) ? Math.min(95, Math.max(12, progress)) : Math.min(95, (state.progress || 12) + 8);
+        this.saveSession.resultState.set(index, {
+          ...state,
+          phase: statusPayload.status === 'ready' ? 'ready' : 'extracting',
+          progress: statusPayload.status === 'ready' ? 100 : safeProgress,
+          payload
+        });
+        this.renderSearchResults();
+        if (statusPayload.status === 'ready') return;
+      } catch (error) {
+        console.error('[Save/Status]', error);
+        this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+        this.renderSearchResults();
+        this.ui.state.showToast('Could not process that video');
+        return;
+      }
+    }
+
+    this.saveSession.resultState.set(index, { phase: 'confirm', progress: 0 });
+    this.renderSearchResults();
+    this.ui.state.showToast('Audio extraction timed out');
+  }
+
+  handleDownload(index) {
+    const state = this.saveSession.resultState.get(index);
+    const payload = state?.payload;
+    if (!payload) return;
+    const path = payload.downloadUrl || `/api/download/${encodeURIComponent(payload.filename)}`;
+    const href = this.getAbsoluteApiUrl(path);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = payload.filename || 'audio.mp3';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    this.hiddenSaveSongs.add(this.saveSession.activeKey);
+    this.persistHiddenSaveSongs();
+    this.refreshSongSaveButtons();
+    this.closeSaveOffcanvas();
   }
 
   showArtistPopover(artistId, event) {
@@ -890,6 +1272,8 @@ class ContentEventManager {
     }
 
     this.attachHeartEvents();
+    this.bindResetSaveControl();
+    this.attachSongSaveEvents();
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
