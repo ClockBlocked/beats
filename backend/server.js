@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { spawn } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
@@ -12,7 +13,8 @@ const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1'; // use 0.0.0.0 for direct external testing
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
-const FILE_TTL_MS = Number(process.env.FILE_TTL_HOURS || 6) * 60 * 60 * 1000;
+const FILE_TTL_MS = Number(process.env.FILE_TTL_HOURS || 6) * 60 * 60 * 1000; // keep extracted files for ~6h by default
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
 
 const extractionState = new Map();
 
@@ -54,8 +56,10 @@ function humanDuration(seconds) {
 }
 
 function safeFileName(name = '') {
-  const base = path.basename(String(name));
-  if (!base || base.includes('..')) return null;
+  const raw = String(name);
+  const base = path.basename(raw);
+  if (!base || base !== raw) return null;
+  if (!/^[a-zA-Z0-9._-]+$/.test(base)) return null;
   return base;
 }
 
@@ -71,7 +75,7 @@ function parseProgress(chunk) {
   return Number.isFinite(val) ? Math.max(0, Math.min(99, Math.round(val))) : null;
 }
 
-function runYouTubeSearch(query) {
+function searchYouTube(query) {
   return new Promise((resolve, reject) => {
     const args = [
       '--dump-json',
@@ -114,7 +118,7 @@ function runYouTubeSearch(query) {
             url: entry.webpage_url || `https://www.youtube.com/watch?v=${entry.id}`
           });
         } catch {
-          // Ignore malformed lines and continue parsing valid entries.
+          console.warn('[search] Skipping malformed yt-dlp line');
         }
       }
       resolve(results.slice(0, 10));
@@ -146,7 +150,7 @@ app.get('/api/search', async (req, res) => {
   }
 
   try {
-    const results = await runYouTubeSearch(q);
+    const results = await searchYouTube(q);
     return res.json(results);
   } catch (error) {
     console.error('[search]', error.message);
@@ -163,7 +167,7 @@ app.post('/api/extract', async (req, res) => {
     return res.status(400).json({ error: 'Invalid url' });
   }
 
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = crypto.randomUUID();
   const filename = `${id}.mp3`;
   const outputPath = path.join(DOWNLOADS_DIR, filename);
 
@@ -275,7 +279,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, host: HOST, port: PORT });
 });
 
-setInterval(pruneOldDownloads, 30 * 60 * 1000);
+setInterval(pruneOldDownloads, CLEANUP_INTERVAL_MS);
 pruneOldDownloads().catch(() => {});
 
 app.listen(PORT, HOST, () => {

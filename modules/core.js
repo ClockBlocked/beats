@@ -13,6 +13,12 @@
 
 // Change this one value when moving from VPS IP to your real domain/tunnel URL.
 const YT_AUDIO_API_BASE = 'http://185.27.135.91';
+const YT_EXTRACT_TIMEOUT_MS = 120000;
+const YT_POLL_INTERVAL_MS = 1800;
+const YT_PROGRESS_MIN = 12;
+const YT_PROGRESS_MAX = 95;
+const YT_PROGRESS_STEP = 8;
+const YT_RESULT_MIN_FILL = 6;
 
 class Icons {
   static hearts = {
@@ -564,10 +570,10 @@ class ContentEventManager {
     shell.querySelector('#yt-save-backdrop')?.addEventListener('click', close);
   }
 
-  formatSaveDuration(sec) {
-    if (!Number.isFinite(sec) || sec <= 0) return 'Unknown';
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
+  formatSaveDuration(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return 'Unknown';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
     const hrs = Math.floor(mins / 60);
     const remMins = mins % 60;
     if (hrs) return `${hrs}:${String(remMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -737,7 +743,7 @@ class ContentEventManager {
     this.saveSession.hasFetched = true;
     try {
       const response = await fetch(`${YT_AUDIO_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error('Search failed');
+      if (!response.ok) throw new Error(`Search failed (${response.status})`);
       const json = await response.json();
       if (!Array.isArray(json) || !json.length) {
         this.renderSaveError('No matching videos found for this song.');
@@ -775,7 +781,7 @@ class ContentEventManager {
             </div>
             <div class="yt-result-progress ${showLoader ? 'open' : ''}">
               <div class="yt-result-progress-track">
-                <div class="yt-result-progress-fill" style="width:${Math.max(6, Number(state.progress || 0))}%;"></div>
+                <div class="yt-result-progress-fill" style="width:${Math.max(YT_RESULT_MIN_FILL, Number(state.progress || 0))}%;"></div>
               </div>
               <p>Preparing audio...</p>
             </div>
@@ -864,11 +870,11 @@ class ContentEventManager {
   async pollExtractStatus(index, payload) {
     const statusPath = payload.statusUrl || `/api/status/${encodeURIComponent(payload.filename)}`;
     const statusUrl = this.getAbsoluteApiUrl(statusPath);
-    const timeoutMs = 120000;
+    const timeoutMs = YT_EXTRACT_TIMEOUT_MS;
     const started = Date.now();
 
     while (Date.now() - started < timeoutMs) {
-      await new Promise(resolve => setTimeout(resolve, 1800));
+      await new Promise(resolve => setTimeout(resolve, YT_POLL_INTERVAL_MS));
       const state = this.saveSession.resultState.get(index);
       if (!state || state.phase !== 'extracting') return;
       try {
@@ -878,7 +884,9 @@ class ContentEventManager {
           throw new Error(statusPayload.error || 'Status request failed');
         }
         const progress = Number(statusPayload.progress);
-        const safeProgress = Number.isFinite(progress) ? Math.min(95, Math.max(12, progress)) : Math.min(95, (state.progress || 12) + 8);
+        const safeProgress = Number.isFinite(progress)
+          ? Math.min(YT_PROGRESS_MAX, Math.max(YT_PROGRESS_MIN, progress))
+          : Math.min(YT_PROGRESS_MAX, (state.progress || YT_PROGRESS_MIN) + YT_PROGRESS_STEP);
         this.saveSession.resultState.set(index, {
           ...state,
           phase: statusPayload.status === 'ready' ? 'ready' : 'extracting',
