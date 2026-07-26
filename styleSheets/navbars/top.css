@@ -1,1 +1,111 @@
+#top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(var(--bg-body) / 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(var(--border) / 0.5);
+}
 
+#top-nav .nav-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+  padding: 0 2rem;
+}
+
+#top-nav .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#top-nav .logo .logo-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-accent);
+  transition: var(--theme-transition);
+}
+
+#top-nav .logo .logo-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: rgba(var(--text-primary));
+  stroke-width: 2.5;
+}
+
+#top-nav .logo .logo-text {
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: -0.02em;
+  display: none;
+}
+
+#top-nav .logo .logo-text span {
+  color: rgba(var(--accent-purple));
+}
+
+@media (min-width: 640px) {
+  #top-nav .logo .logo-text {
+    display: block;
+  }
+}
+
+#top-nav .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#top-nav .nav-link {
+  font-weight: 600;
+  font-size: 1rem;
+  color: rgba(var(--text-secondary));
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+#top-nav .nav-link.active,
+#top-nav .nav-link:hover {
+  color: rgba(var(--text-primary));
+}
+
+#top-nav .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#top-nav .nav-icon-btn {
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: transparent;
+  border: none;
+  color: rgba(var(--text-secondary));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#top-nav .nav-icon-btn:hover {
+  background: rgba(var(--bg-interactive));
+  color: rgba(var(--text-primary));
+}
+
+#top-nav .spacer {
+  width: 2.5rem;
+}

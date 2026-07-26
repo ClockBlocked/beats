@@ -1,1 +1,379 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(var(--overlay-bg) / var(--overlay-alpha));
+  backdrop-filter: blur(8px);
+  z-index: 90;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
 
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 91;
+  background: rgba(var(--player-secondary) / 0.7);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  max-width: 90%;
+  width: 400px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease, background 1.2s ease;
+  box-shadow: 0 20px 60px rgba(var(--shadow-heavy) / var(--shadow-heavy-alpha));
+}
+
+.modal.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(var(--player-primary));
+  color: rgba(var(--player-accent));
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 250;
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s, background 1.2s ease, color 0.8s ease, border-color 0.8s ease, box-shadow 1s ease;
+  box-shadow: 0 10px 30px rgba(var(--player-accent) / 0.25);
+  border: 1px solid rgba(var(--player-accent));
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+
+
+
+
+
+.artist-popover {
+  position: fixed;
+  left: var(--popover-x, 0);
+  top: var(--popover-y, 0);
+  transform: translate(-50%, -120%);
+  filter: drop-shadow(0 20px 40px rgba(var(--shadow-heavy) / var(--shadow-heavy-alpha)));
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.artist-popover .popover-content {
+  position: relative;
+  width: 300px;
+  padding: 0.65rem 0.25rem;
+  background: rgba(var(--bg-surface));
+  border: 1px solid rgba(var(--border));
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  pointer-events: auto;
+  animation: popoverFloatIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.artist-popover .popover-gradient-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 2px;
+  background: linear-gradient(45deg, rgba(var(--accent-purple)), rgba(var(--accent-pink)), rgba(var(--accent-purple)), rgba(var(--accent-purple)));
+  background-size: 300% 300%;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: borderShift 4s ease infinite;
+  opacity: 0.7;
+}
+
+.artist-popover .popover-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.artist-popover .popover-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.artist-popover .popover-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 2rem;
+  object-fit: cover;
+  border: 2px solid rgba(var(--border-subtle) / 0.2);
+  transform: rotate(-2deg);
+  transition: transform 0.2s ease;
+}
+
+.artist-popover .popover-avatar-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 2rem;
+  background: linear-gradient(135deg, rgba(var(--accent-purple) / 0.4), rgba(var(--accent-pink) / 0.4));
+  filter: blur(8px);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.artist-popover:hover .popover-avatar-glow {
+  opacity: 1;
+}
+
+.artist-popover:hover .popover-avatar {
+  transform: rotate(0deg) scale(1.05);
+}
+
+.artist-popover .popover-title-section {
+  flex: 1;
+}
+
+.artist-popover .popover-artist-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, rgba(var(--text-primary)), rgba(var(--text-secondary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.artist-popover .popover-genre-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(145deg, rgba(var(--accent-purple) / 0.15), rgba(var(--accent-pink) / 0.15));
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(var(--accent-purple));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(var(--accent-purple) / 0.2);
+}
+
+.artist-popover .popover-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 14px 0;
+  margin-bottom: 18px;
+  background: rgba(var(--border-subtle) / 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(var(--border-subtle) / 0.05);
+}
+
+.artist-popover .popover-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.artist-popover .popover-stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  background: linear-gradient(180deg, rgba(var(--text-primary)), rgba(var(--text-tertiary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.artist-popover .popover-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(var(--text-secondary) / 0.6);
+}
+
+.artist-popover .popover-stat-divider {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(180deg, transparent, rgba(var(--accent-purple) / 0.3), transparent);
+}
+
+.artist-popover .popover-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.artist-popover .popover-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.artist-popover .popover-btn-primary {
+  background: linear-gradient(135deg, rgba(var(--accent-purple)), rgba(var(--accent-pink)));
+  color: rgba(var(--text-primary));
+  box-shadow: 0 4px 15px rgba(var(--accent-pink) / 0.3);
+}
+
+.artist-popover .popover-btn-secondary {
+  background: rgba(var(--border-subtle) / 0.1);
+  color: rgba(var(--text-primary));
+  border: 1px solid rgba(var(--border-subtle) / 0.15);
+  backdrop-filter: blur(4px);
+}
+
+.artist-popover .popover-btn-icon {
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 2px 4px rgba(var(--shadow-color) / var(--shadow-alpha)));
+}
+
+.artist-popover .popover-btn:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(var(--text-primary)), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.artist-popover .popover-btn:hover:before {
+  opacity: 0.1;
+}
+
+.artist-popover .popover-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.artist-popover .popover-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.artist-popover .popover-btn-pressed {
+  animation: btnPulse 0.3s ease;
+}
+
+.artist-popover .popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+
+
+
+
+
+@keyframes popoverFloatIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes borderShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes btnPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------- shared modal kit ---------- */
+[data-modal] .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+[data-modal] .head .title { font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; }
+[data-modal] .close { padding: 0.5rem; border-radius: 9999px; background: none; border: none; color: inherit; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+[data-modal] .close:hover { background: rgba(var(--bg-interactive)); }
+[data-modal] .cta { width: 100%; padding: 0.75rem 0; border-radius: 0.75rem; font-weight: 600; background: linear-gradient(135deg, rgba(var(--accent-coral)), rgba(var(--accent-pink))); color: #ffffff; border: none; cursor: pointer; }
+[data-modal] .input { width: 100%; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; background: rgba(var(--bg-elevated)); border: none; color: inherit; font: inherit; }
+[data-modal] .note { font-size: 0.875rem; color: rgba(var(--text-secondary)); }
+[data-modal] .empty { text-align: center; padding: 1rem 0; color: rgba(var(--text-secondary)); }
+[data-modal="save-queue"] .note { margin-bottom: 0.75rem; }
+[data-modal="delete-playlist"] .note { margin-bottom: 1rem; }
+[data-modal="stats"] .empty { padding: 1.5rem 0; }
+
+/* delete-playlist */
+[data-modal="delete-playlist"] .actions { display: flex; gap: 0.75rem; }
+[data-modal="delete-playlist"] .cancel,
+[data-modal="delete-playlist"] .confirm { flex: 1 1 0%; padding: 0.75rem 0; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; color: inherit; }
+[data-modal="delete-playlist"] .cancel { background: rgba(var(--bg-elevated)); }
+[data-modal="delete-playlist"] .confirm { background: rgba(var(--destructive)); color: #ffffff; }
+
+/* playlists modal */
+[data-modal="playlists"] .rows { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+[data-modal="playlists"] .row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-radius: 0.5rem; background: rgba(var(--bg-elevated)); }
+[data-modal="playlists"] .name { font-weight: 600; }
+[data-modal="playlists"] .count { font-size: 0.75rem; color: rgba(var(--text-secondary)); }
+[data-modal="playlists"] .actions { display: flex; gap: 0.5rem; }
+[data-modal="playlists"] .edit,
+[data-modal="playlists"] .delete { padding: 0.5rem; border-radius: 9999px; background: none; border: none; color: inherit; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+[data-modal="playlists"] .edit:hover { background: rgba(var(--bg-interactive)); }
+[data-modal="playlists"] .delete { color: rgba(var(--destructive)); }
+[data-modal="playlists"] .delete:hover { background: rgb(239 68 68 / 0.2); }
+
+/* add-to-playlist modal */
+[data-modal="add-to-playlist"] .context { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: rgba(var(--bg-interactive)); }
+[data-modal="add-to-playlist"] .context .cover { width: 2.5rem; height: 2.5rem; border-radius: 0.375rem; object-fit: cover; }
+[data-modal="add-to-playlist"] .context .info { min-width: 0; }
+[data-modal="add-to-playlist"] .context .title { font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-modal="add-to-playlist"] .context .sub { font-size: 0.75rem; color: rgba(var(--text-secondary)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-modal="add-to-playlist"] .scroll { max-height: 16rem; overflow-y: auto; scrollbar-width: thin; }
+[data-modal="add-to-playlist"] .pick { width: 100%; text-align: left; padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; background: none; border: none; color: inherit; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+[data-modal="add-to-playlist"] .pick:hover { background: rgba(var(--bg-interactive)); }
+[data-modal="add-to-playlist"] .pick .icon { width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: linear-gradient(135deg, rgba(var(--accent-coral) / 0.2), rgba(var(--accent-pink) / 0.15)); }
+[data-modal="add-to-playlist"] .pick .icon svg { color: rgba(var(--accent-coral)); }
+[data-modal="add-to-playlist"] .pick .info { min-width: 0; flex: 1 1 0%; }
+[data-modal="add-to-playlist"] .pick .name { font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-modal="add-to-playlist"] .pick .count { font-size: 0.75rem; color: rgba(var(--text-secondary)); }
+[data-modal="add-to-playlist"] .cta { margin-top: 0.5rem; }

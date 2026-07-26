@@ -1,1 +1,21 @@
+/* ---------- Tooltip wrapper ---------- */
+    .tooltip-wrapper {
+      position: relative;
+      display: inline-block;
+      overflow: visible;          /* allow blur + arrow overflow */
+      outline: none;
+      cursor: default;
+      border-radius: 0.25rem;
+    }
 
+    /* focus ring for keyboard users */
+    .tooltip-wrapper:focus-visible {
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+
+    /* ---------- Reveal state (wrapper has focus) ---------- */
+    .tooltip-wrapper:focus-within .artist-tooltip-popup {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateX(-50%) translateY(0) scale(1);
+      pointer-events: auto;
