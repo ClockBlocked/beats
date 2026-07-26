@@ -1,13 +1,10 @@
-/**
- * styleSheets.js — Dynamic Stylesheet Loader
- * Injects all project stylesheets in correct cascade order.
- * Loaded early in <head> to minimize FOUC.
- */
+
+
+
 
 (function loadStyleSheets() {
-  const BASE_PATH = '/beats/styleSheets/';
+  const BASE_PATH = '/styleSheets/';
 
-  // Ordered for proper CSS cascade: base → navbars → pages → players → overlays → catch-all
   const sheets = [
     'base/setup',
     'base/themes',
@@ -15,22 +12,31 @@
     'base/images',
     'base/lists',
     'base/youTube',
+    
     'navbars/top',
     'navbars/breadcrumbs',
     'navbars/albums',
+    
     'pages/home',
     'pages/library',
     'pages/playlists',
     'pages/artists',
     'pages/favorites',
+    
     'players/drawer',
     'players/floating',
+    
     'overlays/modals',
     'overlays/dropDowns',
     'overlays/popOvers',
     'overlays/search',
     'overlays/toasts',
     'overlays/toolTips',
+
+
+
+
+    
     'unSorted'
   ];
 
