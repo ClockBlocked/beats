@@ -5,6 +5,9 @@
 
 
 
+/***********************************************
+          *******  H O M E  ********
+***********************************************/
 class Home {
   constructor(ui) { this.ui = ui; }
 
@@ -36,22 +39,21 @@ class Home {
 
   quickPlaySection(genres) {
     return `
-      <section class="quick-play mb-8">
-        <div class="quick-play-hero rounded-2xl p-6" style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.15), hsl(var(--accent-pink) / 0.1)); border: 1px solid hsl(var(--border-subtle) / 0.25);">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <div>
-              <h2 class="text-xl font-bold">Quick Play</h2>
-              <p class="text-sm" style="color: hsl(var(--text-secondary));">Jump right in</p>
+      <section data-area="quick-play" class="section">
+        <div class="hero">
+          <div class="top">
+            <div class="heading">
+              <h2 class="title">Quick Play</h2>
+              <p class="sub">Jump right in</p>
             </div>
-            <button class="shuffle-all-btn px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 justify-center"
-                    style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;"
+            <button class="shuffle"
                     data-action="shuffle-all"
                     onclick="window.pagesActions.shuffleAll()">
               ${Icons.player.shuffle(16)} Shuffle All
             </button>
           </div>
-          <div class="flex flex-wrap gap-2">
-            ${genres.map(g => `<button class="genre-pill px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105" style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.3);" data-genre="${g}" onclick="window.pagesActions.playGenre(this.dataset.genre)">${g}</button>`).join('')}
+          <div data-list="genres" class="pills">
+            ${genres.map(g => `<button class="pill" data-genre="${g}" onclick="window.pagesActions.playGenre(this.dataset.genre)">${g}</button>`).join('')}
           </div>
         </div>
       </section>
@@ -60,17 +62,17 @@ class Home {
 
   moodMixSection(moods) {
     return `
-      <section class="mb-8">
+      <section data-area="moods" class="section">
         <h2 class="section-header">Mood Mix</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div data-list="moods" class="grid">
           ${moods.map((mood, i) => `
-            <button class="mood-card rounded-xl p-4 text-left transition-all hover:-translate-y-1 animate-fadeInUp"
-                    style="background: linear-gradient(135deg, ${mood.gradient}); animation-delay: ${i * 60}ms; border: 1px solid hsl(var(--border-subtle) / 0.2);"
+            <button data-card="mood" class="card animate-fadeInUp"
+                    style="--g: ${mood.gradient}; --d: ${i * 60}ms;"
                     data-mood="${mood.key}"
                     onclick="window.pagesActions.playMood(this.dataset.mood)">
-              <span class="text-2xl mb-2 block">${mood.emoji}</span>
-              <p class="font-bold text-sm">${mood.label}</p>
-              <p class="text-xs opacity-70">${mood.desc}</p>
+              <span class="emoji">${mood.emoji}</span>
+              <p class="label">${mood.label}</p>
+              <p class="desc">${mood.desc}</p>
             </button>
           `).join('')}
         </div>
@@ -80,17 +82,18 @@ class Home {
 
   statsSection(stats) {
     return `
-      <section class="mb-8">
-        <div class="stats-card rounded-2xl p-5" style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-          <h3 class="font-bold text-sm mb-3" style="color: hsl(var(--text-secondary));">Your Library</h3>
-          <div class="grid grid-cols-5 gap-3 text-center">
+      <section data-area="stats" class="section">
+        <div class="card">
+          <h3 class="title">Your Library</h3>
+          <div data-list="stats" class="grid">
             ${stats.map(s => `
-              <div>
-                <p class="text-xl font-black" style="color: hsl(var(--accent-coral));">${s.value}</p>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">${s.label}</p>
+              <div class="stat">
+                <p class="value">${s.value}</p>
+                <p class="label">${s.label}</p>
               </div>
             `).join('')}
           </div>
+          <button class="stats-dash-btn" onclick="window.pagesActions.openStatsDashboard()">View listening stats</button>
         </div>
       </section>
     `;
@@ -98,21 +101,19 @@ class Home {
 
   mixCard(song, index) {
     return `
-      <div class="mix-card rounded-2xl p-3 animate-fadeInUp"
-           style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.22); animation-delay: ${index * 50}ms;">
-        <div class="flex items-center gap-3">
-          <button class="relative" data-song-id="${song.id}">
-            <img src="${song.coverUrl}" class="w-16 h-16 rounded-2xl object-cover">
+      <div data-card="mix" class="card animate-fadeInUp" style="--d: ${index * 50}ms;">
+        <div class="row">
+          <button class="cover" data-song-id="${song.id}" data-play-source="home">
+            <img src="${song.coverUrl}">
           </button>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs uppercase tracking-[0.2em] mb-1" style="color: hsl(var(--text-secondary));">For You</p>
-            <p class="font-bold text-sm truncate">${song.title}</p>
-            <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">${song.artist} • ${song.album}</p>
+          <div class="info">
+            <p class="kicker">For You</p>
+            <p class="title">${song.title}</p>
+            <p class="sub">${song.artist} • ${song.album}</p>
           </div>
-          <button class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;"
+          <button class="play"
                   data-song-id="${song.id}"
-                  onclick="event.stopPropagation(); window.pagesActions.playSong(this.dataset.songId)">
+                  onclick="event.stopPropagation(); window.pagesActions.playSong(this.dataset.songId, 'home')">
             ${Icons.player.play(14)}
           </button>
         </div>
@@ -130,13 +131,13 @@ class Home {
     const topPicks = IdUtils.sample(allSongs, 12);
     const spotlight = IdUtils.sample([...state.enrichedLibrary], 10);
     const genres = [...new Set(state.enrichedLibrary.map(a => a.genre).filter(Boolean))];
-    const moods = [
-      { key: 'chill', label: 'Chill', emoji: '🌊', desc: 'Laid back vibes', gradient: 'hsl(200 60% 25% / 0.5), hsl(220 50% 20% / 0.5)' },
-      { key: 'energy', label: 'Energy', emoji: '⚡', desc: 'High intensity', gradient: 'hsl(20 80% 30% / 0.5), hsl(0 70% 25% / 0.5)' },
-      { key: 'focus', label: 'Focus', emoji: '🎯', desc: 'Deep concentration', gradient: 'hsl(260 50% 25% / 0.5), hsl(280 40% 20% / 0.5)' },
-      { key: 'party', label: 'Party', emoji: '🎉', desc: 'Turn it up', gradient: 'hsl(330 60% 30% / 0.5), hsl(350 50% 25% / 0.5)' },
-      { key: 'romance', label: 'Romance', emoji: '💕', desc: 'Love songs', gradient: 'hsl(340 50% 25% / 0.5), hsl(320 40% 20% / 0.5)' }
-    ];
+const moods = [
+  { key: 'chill',   label: 'Chill',   emoji: '🌊', desc: 'Laid back vibes',     gradient: 'rgba(26, 77, 102, 0.5), rgba(46, 66, 92, 0.5)' },
+  { key: 'energy',  label: 'Energy',  emoji: '⚡', desc: 'High intensity',      gradient: 'rgba(191, 56, 20, 0.5), rgba(191, 0, 38, 0.5)' },
+  { key: 'focus',   label: 'Focus',   emoji: '🎯', desc: 'Deep concentration',  gradient: 'rgba(81, 48, 128, 0.5), rgba(102, 36, 128, 0.5)' },
+  { key: 'party',   label: 'Party',   emoji: '🎉', desc: 'Turn it up',          gradient: 'rgba(204, 0, 77, 0.5), rgba(191, 48, 64, 0.5)' },
+  { key: 'romance', label: 'Romance', emoji: '💕', desc: 'Love songs',          gradient: 'rgba(191, 0, 77, 0.5), rgba(179, 26, 77, 0.5)' }
+];
     const stats = [
       { label: 'Artists', value: state.enrichedLibrary.length },
       { label: 'Albums', value: state.enrichedLibrary.reduce((sum, artist) => sum + artist.albums.length, 0) },
@@ -154,21 +155,22 @@ class Home {
     const forYouMix = this.pickForYouMix(state, allSongs);
 
     return `
-      <div class="pb-28 animate-fadeInUp">
-        <div class="mb-8">
-          <h1 class="font-black text-2xl md:text-3xl lg:text-4xl mb-2">
-            Welcome to MyBeats<span style="color: hsl(var(--accent-coral));">™</span>
+      <div data-page="home" class="page animate-fadeInUp">
+        <div data-area="welcome" class="welcome">
+          <h1 class="title">
+            Welcome to MyBeats<span class="accent">™</span>
           </h1>
-          <p style="color: hsl(var(--text-secondary));">Streaming & sharing your favorite music for free.</p>
+          <p class="sub">Streaming & sharing your favorite music for free.</p>
         </div>
         ${this.quickPlaySection(genres)}
         ${this.ui.scrollSection('Discover Albums', featured.map((item, i) => this.ui.albumCard(item.artistId, item.artistName, item.albumId, item.albumName, item.coverUrl, i)))}
         ${this.moodMixSection(moods)}
         ${this.topPicksSection(topPicks)}
+        ${this.mostPlayedSection()}
         ${this.statsSection(stats)}
         ${newReleases.length ? this.ui.scrollSection('New Releases', newReleases.map((item, i) => this.ui.albumCard(item.artistId, item.artistName, item.albumId, item.albumName, item.coverUrl, i))) : ''}
         ${this.ui.scrollSection('Artist Spotlight', spotlight.map((a, i) => this.ui.artistCard(a, i)))}
-        ${forYouMix.length ? `<section class="mb-8"><h2 class="section-header">For You Mix</h2><div class="mix-grid grid grid-cols-1 lg:grid-cols-2 gap-3">${forYouMix.map((song, i) => this.mixCard(song, i)).join('')}</div></section>` : ''}
+        ${forYouMix.length ? `<section data-area="for-you" class="section"><h2 class="section-header">For You Mix</h2><div data-list="mixes" class="grid">${forYouMix.map((song, i) => this.mixCard(song, i)).join('')}</div></section>` : ''}
         ${state.recentlyPlayed.length ? this.ui.scrollSection('Recently Played', state.recentlyPlayed.slice(0, 8).map((s, i) => this.ui.recentCard(s, i))) : ''}
         ${state.playlists.length ? this.playlistsGrid(state.playlists) : ''}
       </div>
@@ -177,17 +179,17 @@ class Home {
 
   topPicksSection(songs) {
     return `
-      <section class="mb-8">
+      <section data-area="top-picks" class="section">
         <h2 class="section-header">Top Picks for You</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div data-list="songs" class="grid">
           ${songs.map((s, i) => `
-            <button class="song-row w-full animate-fadeInUp rounded-2xl px-3 py-3 text-left" data-song-id="${s.id}" style="animation-delay: ${i * 40}ms; background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-              <img src="${s.coverUrl}" class="w-14 h-14 rounded-2xl object-cover">
-              <div class="flex-1 min-w-0 text-left">
-                <p class="font-semibold text-sm truncate">${s.title}</p>
-                <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">${s.artist} • ${s.album}</p>
+            <button class="song-row animate-fadeInUp" style="--d: ${i * 40}ms;" data-song-id="${s.id}" data-play-source="home">
+              <img src="${s.coverUrl}" class="cover">
+              <div class="info">
+                <p class="title">${s.title}</p>
+                <p class="sub">${s.artist} • ${s.album}</p>
               </div>
-              <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: hsl(var(--bg-interactive)); color: hsl(var(--text-secondary));">
+              <div class="icon">
                 ${Icons.player.play(14)}
               </div>
             </button>
@@ -197,28 +199,126 @@ class Home {
     `;
   }
 
+  mostPlayedSection() {
+    const state = this.ui.state;
+    if (!state.playCounts || Object.keys(state.playCounts).length < 3) return '';
+    const songs = state.getMostPlayed(8);
+    if (!songs.length) return '';
+    return `
+      <section data-area="most-played" class="section">
+        <h2 class="section-header">Most Played</h2>
+        <div data-list="songs" class="grid">
+          ${songs.map((s, i) => `
+            <button class="song-row animate-fadeInUp" style="--d: ${i * 40}ms;" data-song-id="${s.id}" data-play-source="home">
+              <img src="${s.coverUrl}" class="cover">
+              <div class="info">
+                <p class="title">${s.title}</p>
+                <p class="sub">${s.artist} • ${s.album}</p>
+              </div>
+              <span class="most-played-count">${state.getPlayCount(s.id)} plays</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  statsDashboard() {
+    const state = this.ui.state;
+    const stats = state.listenStats || { totalSeconds: 0, plays: 0, perArtist: {}, perSong: {} };
+    const totalSeconds = Math.round(stats.totalSeconds || 0);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const timeLabel = hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const topArtists = state.getTopArtistsByPlays(5);
+    const topSongs = state.getTopSongsByTime(5);
+    const fmtSecs = (secs) => {
+      const s = Math.round(secs);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      return h ? `${h}h ${m}m` : `${m}m`;
+    };
+    const emptyState = `
+      <div class="empty">
+        No listening data yet — play some music!
+      </div>
+    `;
+    return `
+      <div data-modal="stats" class="stats-dash">
+        <div class="head">
+          <h2 class="title">Listening Stats</h2>
+          <button onclick="window.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="stats-total-grid">
+          <div class="stats-total-card">
+            <p class="stats-total-value">${timeLabel}</p>
+            <p class="stats-total-label">Total listening time</p>
+          </div>
+          <div class="stats-total-card">
+            <p class="stats-total-value">${stats.plays || 0}</p>
+            <p class="stats-total-label">Total plays</p>
+          </div>
+        </div>
+        ${!topArtists.length && !topSongs.length ? emptyState : `
+          <div class="stats-dash-grid">
+            <div class="stats-dash-col">
+              <h3 class="stats-dash-heading">Top Artists</h3>
+              ${topArtists.length ? topArtists.map((entry, i) => `
+                <div class="stats-dash-row" data-artist-id="${entry.artist.id}">
+                  <span class="stats-dash-rank">${i + 1}</span>
+                  <img src="${entry.artist.imageUrl}" class="stats-dash-thumb" alt="${entry.artist.artist}">
+                  <div class="stats-dash-info">
+                    <p class="stats-dash-title">${entry.artist.artist}</p>
+                    <p class="stats-dash-sub">${entry.plays} plays</p>
+                  </div>
+                </div>
+              `).join('') : '<p class="stats-dash-empty">No artist plays yet</p>'}
+            </div>
+            <div class="stats-dash-col">
+              <h3 class="stats-dash-heading">Top Songs</h3>
+              ${topSongs.length ? topSongs.map((entry, i) => `
+                <div class="stats-dash-row">
+                  <span class="stats-dash-rank">${i + 1}</span>
+                  <img src="${entry.song.coverUrl}" class="stats-dash-thumb stats-dash-thumb-square" alt="${entry.song.title}">
+                  <div class="stats-dash-info">
+                    <p class="stats-dash-title">${entry.song.title}</p>
+                    <p class="stats-dash-sub">${fmtSecs(entry.seconds)} listened</p>
+                  </div>
+                </div>
+              `).join('') : '<p class="stats-dash-empty">No songs tracked yet</p>'}
+            </div>
+          </div>
+        `}
+      </div>
+    `;
+  }
+
   playlistsGrid(playlists) {
     const state = this.ui.state;
     return `
-      <section class="mb-8">
+      <section data-area="playlists" class="section">
         <h2 class="section-header">Your Playlists</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div data-list="playlists" class="grid">
           ${playlists.map((pl, i) => {
             const preview = pl.songs.map(songId => state.getSongById(songId)).filter(Boolean).slice(0, 4);
             return `
-              <div class="rounded-2xl p-3 transition-all cursor-pointer animate-fadeInUp hover:-translate-y-1"
-                   style="background: hsl(var(--bg-elevated)); animation-delay: ${i * 50}ms; border: 1px solid hsl(var(--border-subtle) / 0.2);">
-                <div class="w-full aspect-square rounded-2xl mb-3 overflow-hidden" style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.2), hsl(var(--accent-pink) / 0.15));">
+              <div data-card="playlist" class="card animate-fadeInUp" style="--d: ${i * 50}ms;" data-playlist-view="${pl.name}">
+                <div class="playlist-card-cover cover">
                   ${preview.length ? `
-                    <div class="grid grid-cols-2 gap-1 w-full h-full p-1">
+                    <div class="mosaic">
                       ${Array.from({ length: 4 }).map((_, idx) => preview[idx]
-                        ? `<img src="${preview[idx].coverUrl}" class="w-full h-full rounded-xl object-cover">`
-                        : `<div class="rounded-xl" style="background: hsl(var(--bg-interactive));"></div>`).join('')}
+                        ? `<img src="${preview[idx].coverUrl}" class="thumb">`
+                        : `<div class="cell"></div>`).join('')}
                     </div>
-                  ` : `<div class="w-full h-full flex items-center justify-center">${Icons.general.playlist(36)}</div>`}
+                  ` : `<div class="placeholder">${Icons.general.playlist(36)}</div>`}
+                  <button class="playlist-play-overlay" data-playlist-play="${pl.id}" title="Play playlist">
+                    ${Icons.player.play(18)}
+                  </button>
                 </div>
-                <p class="font-semibold text-sm truncate">${pl.name}</p>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">${pl.songs.length} songs</p>
+                <p class="name">${pl.name}</p>
+                <p class="count">${pl.songs.length} songs</p>
               </div>
             `;
           }).join('')}
@@ -227,22 +327,34 @@ class Home {
     `;
   }
 }
+/***********************************************************************************
+***********************************************************************************/
 
+
+
+
+
+
+
+
+/***********************************************
+        *******  L I B R A R Y  ********
+***********************************************/
 class Library {
   constructor(ui) { this.ui = ui; }
 
   render() {
     const state = this.ui.state;
     return `
-      <div class="pb-28 animate-fadeInUp">
-        <div class="space-y-8">
+      <div data-page="library" class="page animate-fadeInUp">
+        <div class="stack">
           ${state.enrichedLibrary.map((artist, i) => `
-            <section class="animate-fadeInUp" style="animation-delay: ${i * 80}ms">
-              <button class="flex items-center gap-3 mb-4 group" data-artist-id="${artist.id}">
-                <img src="${artist.imageUrl}" class="w-12 h-12 rounded-full object-cover transition-transform group-hover:scale-110">
-                <div class="text-left">
-                  <h4 class="font-bold text-md group-hover:underline">${artist.artist}</h4>
-                  <p class="text-xs" style="color: hsl(var(--text-secondary));">${artist.genre || 'Artist'} • ${artist.albums.length} albums</p>
+            <section data-area="artist" class="artist animate-fadeInUp" style="--d: ${i * 80}ms">
+              <button class="head" data-artist-id="${artist.id}">
+                <img src="${artist.imageUrl}" class="avatar">
+                <div class="info">
+                  <h4 class="name">${artist.artist}</h4>
+                  <p class="sub">${artist.genre || 'Artist'} • ${artist.albums.length} albums</p>
                 </div>
               </button>
               <div class="scroll-row">
@@ -255,49 +367,192 @@ class Library {
     `;
   }
 }
+/***********************************************************************************
+***********************************************************************************/
 
+
+
+
+
+
+
+/***********************************************
+      *******  P L A Y L I S T S  ********
+***********************************************/
+class Playlists {
+  constructor(ui) { this.ui = ui; }
+
+  render() {
+    const state = this.ui.state;
+    const viewing = state.selectedPlaylistName;
+    return `
+      <div data-page="playlists" class="page animate-fadeInUp">
+        <div class="head">
+          <div class="heading">
+            <p class="kicker">Playlists</p>
+            <h1 class="title">${viewing || 'Your mixes'}</h1>
+            <p class="sub">Curate albums, moods, and artist journeys you can revisit anytime.</p>
+          </div>
+          <button id="create-playlist-btn" class="create"
+                  onclick="window.uiManager.showSpinner(); setTimeout(() => { document.getElementById('create-playlist-modal')?.classList.remove('hidden'); window.uiManager.hideSpinner(); }, window.uiManager.fragmentLoadDelay);">
+            + Create
+          </button>
+        </div>
+        ${viewing ? this.playlistViewer(viewing) : this.playlistsGrid()}
+      </div>
+    `;
+  }
+
+  playlistsGrid() {
+    const state = this.ui.state;
+    if (!state.playlists.length) {
+      return `
+        <div class="empty">
+          <div class="icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3 class="title">No playlists yet</h3>
+          <p class="desc">Create your first playlist to organize your favorite songs</p>
+        </div>
+      `;
+    }
+    return `
+      <div data-list="playlists" class="grid">
+        ${state.playlists.map((pl, i) => {
+          const previewSongs = pl.songs.map(id => state.getSongById(id)).filter(Boolean).slice(0, 3);
+          return `
+            <div data-card="playlist" class="card animate-fadeInUp" style="--d: ${i * 60}ms" data-playlist-view="${pl.name}">
+              <div class="head">
+                <div class="heading">
+                  <p class="kicker">Playlist</p>
+                  <p class="name">${pl.name}</p>
+                  <p class="count">${pl.songs.length} songs</p>
+                </div>
+                <div class="actions">
+                  <button class="playlist-card-play" data-playlist-play="${pl.id}" title="Play playlist">
+                    ${Icons.player.play(14)}
+                  </button>
+                  <button class="more" onclick="event.stopPropagation(); window.favoritesPlaylists.openPlaylistModal()">
+                    ${Icons.general.moreHoriz(18)}
+                  </button>
+                </div>
+              </div>
+              <div class="previews">
+                ${previewSongs.map(s => `<img src="${s.coverUrl}" class="thumb">`).join('')}
+                ${pl.songs.length > 3 ? `<div class="extra">+${pl.songs.length - 3}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  playlistViewer(name) {
+    const state = this.ui.state;
+    const playlist = state.playlists.find(p => p.name === name);
+    if (!playlist) return `<div class="missing">Playlist not found</div>`;
+    const songs = playlist.songs.map(id => state.getSongById(id)).filter(Boolean);
+    return `
+      <div data-area="viewer" class="viewer">
+        <div class="head">
+          <div class="heading">
+            <p class="kicker">Playlist</p>
+            <h2 class="title">${playlist.name}</h2>
+            <p class="sub">${songs.length} songs • curated by you</p>
+          </div>
+          <div class="actions">
+            <button class="playlist-hero-btn" data-playlist-play="${playlist.id}" title="Play playlist">
+              ${Icons.player.play(14)} <span>Play</span>
+            </button>
+            <button class="playlist-hero-btn playlist-hero-btn-alt" data-playlist-shuffle="${playlist.id}" title="Shuffle playlist">
+              ${Icons.player.shuffle(14)} <span>Shuffle</span>
+            </button>
+            <button class="share-playlist-btn share" data-playlist-id="${playlist.id}">
+              Share
+            </button>
+          </div>
+        </div>
+        <div data-list="songs" class="rows">
+          ${songs.map((s, i) => `
+            <div class="song-row" data-song-id="${s.id}" data-playlist-id="${playlist.id}" data-play-source="playlist">
+              <span class="num">${i + 1}</span>
+              <img src="${s.coverUrl}" class="cover">
+              <div class="info">
+                <p class="title">${s.title}</p>
+                <p class="sub">${s.artist}</p>
+              </div>
+              <button class="downloadBtn" data-action="download-song" data-song-id="${s.id}" data-song-title="${s.title}" data-song-thumbnail="${s.coverUrl}" title="Download">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+              <p class="time">${s.duration}</p>
+              <button class="remove-from-playlist-btn remove" data-playlist-id="${playlist.id}" data-song-id="${s.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+/***********************************************************************************
+***********************************************************************************/
+
+
+
+
+
+
+
+
+/***********************************************
+      *******  F A V O R I T E S  ********
+***********************************************/
 class Favorites {
   constructor(ui) { this.ui = ui; }
 
-  emptyState(emoji, title, body) {
+  emptyState(emoji, title, desc) {
     return `
-      <div class="empty-card rounded-3xl py-14 px-6 text-center" style="background: hsl(var(--bg-elevated)); border: 1px dashed hsl(var(--border-subtle) / 0.35);">
-        <div class="text-5xl mb-4">${emoji}</div>
-        <h3 class="text-xl font-bold mb-2">${title}</h3>
-        <p class="max-w-sm mx-auto text-sm" style="color: hsl(var(--text-secondary));">${body}</p>
+      <div class="empty animate-fadeInUp">
+        <div class="icon">${emoji}</div>
+        <h3 class="title">${title}</h3>
+        <p class="desc">${desc}</p>
       </div>
     `;
   }
 
   renderSongCards(songs) {
     return `
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div data-list="songs" class="rows">
         ${songs.map((s, i) => `
-          <div class="rounded-3xl p-4 animate-fadeInUp"
-               style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2); animation-delay: ${i * 40}ms;">
-            <div class="flex gap-4 items-center">
-              <button class="relative flex-shrink-0" data-song-id="${s.id}">
-                <img src="${s.coverUrl}" class="w-20 h-20 rounded-2xl object-cover">
+          <div class="row animate-fadeInUp" style="--d: ${i * 40}ms">
+            <button class="cover" data-song-id="${s.id}" data-play-source="favorites">
+              <img src="${s.coverUrl}">
+            </button>
+            <div class="info">
+              <p class="title">${s.title}</p>
+              <p class="sub">${s.artist} • ${s.album}</p>
+              <p class="time">${s.duration}</p>
+            </div>
+            <div class="actions">
+              <button class="play" title="Play"
+                      data-song-id="${s.id}"
+                      onclick="event.stopPropagation(); window.pagesActions.playSong(this.dataset.songId, 'favorites')">
+                ${Icons.player.play(14)}
               </button>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs uppercase tracking-[0.2em] mb-1" style="color: hsl(var(--text-secondary));">Favorite Song</p>
-                <p class="font-bold text-base truncate">${s.title}</p>
-                <p class="text-sm truncate" style="color: hsl(var(--text-secondary));">${s.artist} • ${s.album}</p>
-                <div class="flex items-center gap-2 mt-3">
-                  <button class="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
-                          style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;"
-                          data-song-id="${s.id}"
-                          onclick="event.stopPropagation(); window.pagesActions.playSong(this.dataset.songId)">
-                    ${Icons.player.play(12)} Play
-                  </button>
-                  <button class="add-to-playlist-btn px-3 py-2 rounded-xl text-xs font-semibold"
-                          style="background: hsl(var(--bg-interactive));"
-                          data-song-id="${s.id}">
-                    + Playlist
-                  </button>
-                </div>
-              </div>
-              <button class="song-action-btn ${this.ui.favorites.isSongFavorite(s.id) ? 'favorited' : ''}" data-fav-song="${s.id}">
+              <button class="downloadBtn" data-action="download-song" data-song-id="${s.id}" data-song-title="${s.title}" data-song-thumbnail="${s.coverUrl}" title="Download">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+              <button class="heart ${this.ui.favorites.isSongFavorite(s.id) ? 'favorited' : ''}" data-fav-song="${s.id}">
                 ${this.ui.likeStatus('song', this.ui.favorites.isSongFavorite(s.id), false, null)}
               </button>
             </div>
@@ -309,14 +564,12 @@ class Favorites {
 
   renderArtistCards(artists) {
     return `
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div data-list="artists" class="grid">
         ${artists.map((a, i) => `
-          <button class="rounded-3xl p-5 text-center animate-fadeInUp transition-all hover:-translate-y-1"
-                  style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2); animation-delay: ${i * 40}ms"
-                  data-artist-id="${a.id}">
-            <img src="${a.imageUrl}" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover mx-auto mb-4 ring-4" style="--tw-ring-color: hsl(var(--accent-coral) / 0.15);">
-            <p class="font-bold truncate">${a.artist}</p>
-            <p class="text-xs mt-1" style="color: hsl(var(--text-secondary));">${a.genre || 'Artist'}</p>
+          <button data-card="artist" class="card animate-fadeInUp" style="--d: ${i * 40}ms" data-artist-id="${a.id}">
+            <img src="${a.imageUrl}" class="avatar">
+            <p class="name">${a.artist}</p>
+            <p class="sub">${a.genre || 'Artist'}</p>
           </button>
         `).join('')}
       </div>
@@ -325,16 +578,14 @@ class Favorites {
 
   renderAlbumCards(albums) {
     return `
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div data-list="albums" class="grid">
         ${albums.map((alb, i) => `
-          <div class="rounded-3xl p-3 animate-fadeInUp transition-all hover:-translate-y-1 cursor-pointer"
-               style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2); animation-delay: ${i * 50}ms"
-               data-artist-id="${alb.artistId}" data-album-id="${alb.id}">
-            <div class="album-cover-wrap mb-3 overflow-hidden rounded-2xl">
-              <img src="${alb.coverUrl}" class="w-full aspect-square object-cover transition-transform hover:scale-105">
+          <div data-card="album" class="card animate-fadeInUp" style="--d: ${i * 50}ms" data-artist-id="${alb.artistId}" data-album-id="${alb.id}">
+            <div class="album-cover-wrap wrap">
+              <img src="${alb.coverUrl}" class="cover">
             </div>
-            <p class="font-semibold text-sm truncate">${alb.album}</p>
-            <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">${alb.artistName}</p>
+            <p class="title">${alb.album}</p>
+            <p class="sub">${alb.artistName}</p>
           </div>
         `).join('')}
       </div>
@@ -343,19 +594,23 @@ class Favorites {
 
   renderPlaylistCards(playlists) {
     return `
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div data-list="playlists" class="grid">
         ${playlists.map((pl, i) => `
-          <div class="rounded-3xl p-5 animate-fadeInUp"
-               style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2); animation-delay: ${i * 50}ms">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <p class="text-xs uppercase tracking-[0.2em] mb-1" style="color: hsl(var(--text-secondary));">Saved Playlist</p>
-                <p class="font-bold text-lg">${pl.name}</p>
-                <p class="text-sm mt-1" style="color: hsl(var(--text-secondary));">${pl.songs.length} songs</p>
+          <div data-card="playlist" class="card animate-fadeInUp" style="--d: ${i * 50}ms">
+            <div class="row">
+              <div class="heading">
+                <p class="kicker">Saved Playlist</p>
+                <p class="name">${pl.name}</p>
+                <p class="count">${pl.songs.length} songs</p>
               </div>
-              <button onclick="window.favoritesPlaylists.openPlaylistModal()" class="p-2 rounded-full hover:bg-interactive">
-                ${Icons.general.moreHoriz(18)}
-              </button>
+              <div class="actions">
+                <button class="playlist-card-play" data-playlist-play="${pl.id}" title="Play playlist">
+                  ${Icons.player.play(14)}
+                </button>
+                <button class="more" onclick="window.favoritesPlaylists.openPlaylistModal()">
+                  ${Icons.general.moreHoriz(18)}
+                </button>
+              </div>
             </div>
           </div>
         `).join('')}
@@ -379,26 +634,26 @@ class Favorites {
     ];
     const totalFavs = tabToCount.songs + tabToCount.artists + tabToCount.albums;
     return `
-      <div class="pb-28 animate-fadeInUp">
-        <section class="fav-hero rounded-3xl p-6 mb-6" style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.18), hsl(var(--accent-pink) / 0.1)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-          <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-[0.25em] mb-2" style="color: hsl(var(--text-secondary));">Favorites</p>
-              <h1 class="font-black text-2xl md:text-3xl mb-2">Your collection</h1>
-              <p style="color: hsl(var(--text-secondary));">All the songs, artists, and albums you never want to lose.</p>
+      <div data-page="favorites" class="page animate-fadeInUp">
+        <section data-area="hero" class="hero">
+          <div class="wrap">
+            <div class="heading">
+              <p class="kicker">Favorites</p>
+              <h1 class="title">Your collection</h1>
+              <p class="sub">All the songs, artists, and albums you never want to lose.</p>
             </div>
-            <div class="grid grid-cols-4 gap-3 text-center w-full md:w-auto">
+            <div data-list="stats" class="stats">
               ${tabs.map(tab => `
-                <div class="rounded-2xl px-3 py-3" style="background: hsl(var(--bg-elevated) / 0.8);">
-                  <p class="text-lg font-black" style="color: hsl(var(--accent-coral));">${tab.count}</p>
-                  <p class="text-[11px]" style="color: hsl(var(--text-secondary));">${tab.label}</p>
+                <div class="stat">
+                  <p class="value">${tab.count}</p>
+                  <p class="label">${tab.label}</p>
                 </div>
               `).join('')}
             </div>
           </div>
-          <p class="text-sm mt-4" style="color: hsl(var(--text-secondary));">${totalFavs} saved picks across your library.</p>
+          <p class="total">${totalFavs} saved picks across your library.</p>
         </section>
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div data-area="tabs" class="tabs">
           ${tabs.map(({ key, label, count }) => `
             <button class="tab-btn ${key === state.favoritesTab ? 'active' : ''}" data-tab="${key}">
               ${label} (${count})
@@ -442,260 +697,159 @@ class Favorites {
     return '';
   }
 }
-
-class Playlists {
+/***********************************************************************************
+***********************************************************************************/
+/***********************************************
+        *******  A R T I S T S  ********
+***********************************************/
+class Artists {
   constructor(ui) { this.ui = ui; }
 
   render() {
     const state = this.ui.state;
-    const totalSongs = state.playlists.reduce((sum, pl) => sum + pl.songs.length, 0);
+    const artistId = state.artistId;
+    if (!artistId) return '<div>Artist not found</div>';
+    const artist = state.getArtistById(artistId);
+    if (!artist) return '<div>Artist not found</div>';
+
+    const activeAlbumId = state.selectedAlbumId;
+    const activeAlbum = activeAlbumId
+      ? artist.albums.find(a => IdUtils.normalize(a.id) === IdUtils.normalize(activeAlbumId))
+      : artist.albums[0];
+    if (!activeAlbum) return '<div>Album not found</div>';
+
+    const similarIds = artist.similar || [];
+    const similarArtists = similarIds
+      .map(id => state.getArtistById(id))
+      .filter(Boolean);
+    const rows = [
+      similarArtists.slice(0, 4),
+      similarArtists.slice(4, 8),
+      similarArtists.slice(8, 12)
+    ];
+
     return `
-      <div class="pb-28 animate-fadeInUp">
-        <div class="breadcrumb-toggle-bar">
-          <div class="max-w-7xl mx-auto flex justify-center">
-            <button id="breadcrumb-toggle">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-          </div>
+<div class="artist-page" data-page="artist">
+
+        <div class="artist-meta">
+          <h4 class="artist-name">${artist.artist}</h4>
+          <button class="artist-heart ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
+                  data-artist-heart="${artist.id}">
+            ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
+          </button>
         </div>
-        <section class="play-hero rounded-3xl p-6 mb-6" style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.18), hsl(var(--accent-pink) / 0.1)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-[0.25em] mb-2" style="color: hsl(var(--text-secondary));">Playlists</p>
-              <h1 class="font-black text-2xl md:text-3xl mb-2">Your Playlists</h1>
-              <p style="color: hsl(var(--text-secondary));">Shape your soundtrack with hand-picked collections and shareable moments.</p>
-            </div>
-            <div class="flex flex-wrap gap-3 items-center">
-              <div class="rounded-2xl px-4 py-3 text-center" style="background: hsl(var(--bg-elevated) / 0.82);">
-                <p class="text-xl font-black" style="color: hsl(var(--accent-coral));">${state.playlists.length}</p>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">Playlists</p>
-              </div>
-              <div class="rounded-2xl px-4 py-3 text-center" style="background: hsl(var(--bg-elevated) / 0.82);">
-                <p class="text-xl font-black" style="color: hsl(var(--accent-coral));">${totalSongs}</p>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">Songs</p>
-              </div>
-              <button id="create-playlist-btn" class="px-4 py-2 rounded-xl font-semibold"
-                      style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;">
-                + New Playlist
-              </button>
-            </div>
-          </div>
-        </section>
-        <div class="space-y-6" id="playlists-container">
-          ${state.playlists.map(pl => this.playlistViewer(pl)).join('')}
-        </div>
-      </div>
+
+
+  <div data-area="about">
+    ${this.aboutSection(artist, activeAlbum)}
+  </div>
+  ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
+  <div class="spacer"></div>
+</div>
     `;
   }
 
-  playlistViewer(pl) {
-    const state = this.ui.state;
-    const previewSongs = pl.songs.map(songId => state.getSongById(songId)).filter(Boolean).slice(0, 4);
-    const songIds = pl.songs;
-    const songList = songIds.length
-      ? songIds.map((songId, i) => {
-          const song = state.getSongById(songId);
-          if (!song) return '';
-          return `
-            <div class="song-row w-full group animate-fadeIn rounded-2xl px-3 py-3" style="animation-delay: ${i * 20}ms; background: hsl(var(--bg-interactive) / 0.35);" data-song-id="${song.id}">
-              <div class="w-7 text-xs font-bold text-center" style="color: hsl(var(--text-secondary));">${i + 1}</div>
-              <img src="${song.coverUrl}" class="w-10 h-10 rounded-xl object-cover">
-              <div class="flex-1 min-w-0 text-left">
-                <p class="font-medium text-sm truncate">${song.title}</p>
-                <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">${song.artist}</p>
-              </div>
-              <p class="text-[11px] hidden sm:block" style="color: hsl(var(--text-secondary));">${song.duration || ''}</p>
-              <button class="remove-from-playlist-btn p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-destructive/20"
-                      data-playlist-id="${pl.id}" data-song-id="${song.id}">
-                ${Icons.general.close(14)}
-              </button>
-            </div>
-          `;
-        }).join('')
-      : `<p class="text-sm italic py-6 text-center" style="color: hsl(var(--text-secondary));">No songs yet. Click the ⋮ menu on any song to add.</p>`;
-
+  aboutSection(artist, activeAlbum) {
     return `
-      <div class="playlist-card rounded-3xl p-5 transition-all relative overflow-hidden" data-playlist-id="${pl.id}" style="background: hsl(var(--bg-elevated)); border: 1px solid hsl(var(--border-subtle) / 0.2);">
-        <div class="absolute inset-x-0 top-0 h-1.5" style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink)));"></div>
-        <div class="flex flex-col lg:flex-row items-start gap-5">
-          <div class="w-full lg:w-32 lg:flex-shrink-0">
-            <div class="rounded-3xl overflow-hidden aspect-square" style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.2), hsl(var(--accent-pink) / 0.15));">
-              ${previewSongs.length ? `
-                <div class="grid grid-cols-2 gap-1 w-full h-full p-1">
-                  ${Array.from({ length: 4 }).map((_, idx) => previewSongs[idx]
-                    ? `<img src="${previewSongs[idx].coverUrl}" class="w-full h-full rounded-2xl object-cover">`
-                    : `<div class="rounded-2xl" style="background: hsl(var(--bg-interactive));"></div>`).join('')}
-                </div>
-              ` : `<div class="w-full h-full flex items-center justify-center">${Icons.general.playlist(40)}</div>`}
-            </div>
-          </div>
-          <div class="flex-1 min-w-0 w-full">
-            <div class="flex items-start justify-between gap-3">
-              <div class="flex-1 min-w-0">
-                <input type="text"
-                       class="playlist-name-input text-2xl font-black bg-transparent border-b border-transparent hover:border-interactive focus:border-accent-coral outline-none w-full mb-2"
-                       value="${pl.name.replace(/"/g, '&quot;')}"
-                       data-playlist-id="${pl.id}" data-field="name" placeholder="Playlist name">
-                <p class="text-xs uppercase tracking-[0.25em] mb-3" style="color: hsl(var(--text-secondary));">${pl.songs.length} tracks curated</p>
-              </div>
-              <button class="share-playlist-btn p-2 rounded-full hover:bg-interactive flex-shrink-0" data-playlist-id="${pl.id}">
-                ${Icons.general.share(18)}
-              </button>
-            </div>
-            <textarea class="playlist-description-input text-sm bg-transparent border border-interactive rounded-2xl p-3 w-full"
-                      placeholder="Add a description..."
-                      data-playlist-id="${pl.id}" data-field="description" rows="2">${pl.description?.replace(/"/g, '&quot;') || ''}</textarea>
-            <div class="tags-container flex flex-wrap gap-2 mt-3" data-playlist-id="${pl.id}">
-              ${(pl.tags || []).map(tag => `
-                <span class="tag-chip px-3 py-1 rounded-full text-xs flex items-center gap-1 animate-fadeIn"
-                      style="background: hsl(var(--bg-interactive));">
-                  ${tag}
-                  <button class="remove-tag-btn hover:text-destructive transition-colors"
-                          data-tag="${tag.replace(/"/g, '&quot;')}">×</button>
-                </span>
-              `).join('')}
-              <input type="text"
-                     class="tag-input bg-transparent border-b border-interactive outline-none text-sm"
-                     placeholder="Add tag + Enter" data-playlist-id="${pl.id}">
-            </div>
-            <div class="mt-5">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold uppercase tracking-wider" style="color: hsl(var(--text-secondary));">
-                  Songs · ${pl.songs.length}
-                </h3>
-                <p class="text-xs" style="color: hsl(var(--text-secondary));">Drag the vibe forward</p>
-              </div>
-              <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-2">${songList}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-}
-
-class Artists {
-  constructor(ui) { this.ui = ui; }
-
-render() {
-  const state = this.ui.state;
-  const artistId = state.artistId;
-  if (!artistId) return '<div>Artist not found</div>';
-  const artist = state.getArtistById(artistId);
-  if (!artist) return '<div>Artist not found</div>';
-
-  const activeAlbumId = state.selectedAlbumId;
-  const activeAlbum = activeAlbumId
-    ? artist.albums.find(a => IdUtils.normalize(a.id) === IdUtils.normalize(activeAlbumId))
-    : artist.albums[0];
-  if (!activeAlbum) return '<div>Album not found</div>';
-
-  const similarIds = artist.similar || [];
-  const similarArtists = similarIds
-    .map(id => state.getArtistById(id))
-    .filter(Boolean);
-  const rows = [
-    similarArtists.slice(0, 4),
-    similarArtists.slice(4, 8),
-    similarArtists.slice(8, 12)
-  ];
-
-  return `
-<div data-page="artist" class="artist-page animate-fadeInUp">
-
-  <div class="area albumTabs">
-    <div><div>
+    <div data-area="albums" class="area albumTabs">
       ${artist.albums.map(alb => `
-        <button data-dynamic="true"
-                class="albumTab ${alb.id === activeAlbum.id ? 'active' : ''}"
+        <button class="albumTab ${alb.id === activeAlbum.id ? 'active' : ''}"
                 data-artist-id="${artist.id}"
-                data-album-id="${alb.id}">
+                data-album-id="${alb.id}"
+                onclick="window.uiManager.refreshArtistContent('${artist.id}', '${alb.id}')">
           ${alb.album}
         </button>
       `).join('')}
-    </div></div>
-  </div>
-
-  <div data-area="songsList" class="heroWrap">
-    <div class="hero">
-      <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
-      <div class="heroScrim"></div>
     </div>
-    <div class="heroBody">
-      <div class="metaData">
-        <h1 class="name">${artist.artist}</h1>
-        <button class="artistHeartBtn ${this.ui.favorites.isArtistFavorite(artist.id) ? 'favorited' : ''}"
-                data-artist-heart="${artist.id}">
-          ${this.ui.likeStatus('artist', this.ui.favorites.isArtistFavorite(artist.id), false, null)}
+
+
+    <div data-area="hero" class="hero-card">
+
+      <div class="hero-cover">
+        <img src="${activeAlbum.coverUrl}" alt="${activeAlbum.album}">
+        <div class="heroFade"></div>
+        <div class="hero-scrim"></div>
+      </div>
+
+
+      <div class="hero-body">
+
+
+        <div class="album-meta">
+          <h3 class="album-title">${activeAlbum.album}</h3><br>
+          <span class="track-count">${activeAlbum.songs.length} tracks</span>
+        </div>
+
+        <button class="play-all"
+                data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
+          ${Icons.player.play(16)} Shuffle
         </button>
+
       </div>
-      <div class="albumInfo">
-        <h2 class="name">${activeAlbum.album}</h2>
-        <span class="stats">${activeAlbum.songs.length} tracks</span>
+
+
+      <div data-list="songs" class="pages artist mobile">
+
+        <div class="header">
+          <div class="left">
+            <span class="badge">Double Platinum</span>
+            <span class="year">${activeAlbum.year || '2024'}</span>
+          </div>
+          <span class="hint">Double-click</span>
+        </div>
+
+        <div class="body">
+          ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
+        </div>
+
       </div>
-      <button class="play"
-              data-play-album='${JSON.stringify({ artistId: artist.id, albumId: activeAlbum.id })}'>
-        ${Icons.player.play(16)} Play All
-      </button>
+
+
+
     </div>
-  </div>
+    `;
+  }
 
- 
-  <div class="songsList">
-    <div class="header">
-      <div class="subHeader">
-        <span class="tag">Double Platinum</span>
-        <h5 class="title">2015</h5>
+  createSongRow(song, index, artist, album) {
+    const isFav = this.ui.favorites.isSongFavorite(song.id);
+    const isPlaying = this.ui.state.currentSong?.id == song.id;
+    return `
+      <div class="songItem ${isPlaying ? 'playing' : ''}"
+           data-song-id="${song.id}"
+           data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
+        <div class="left">
+          <div class="trackNum">${index + 1}</div>
+          <div class="play">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1"/>
+              <polygon points="10,7 17,12 10,17" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+        <div class="center">
+          <div class="title">
+            <span>${song.title}</span>
+          </div>
+        </div>
+        <div class="right">
+          <div class="time">${song.duration}</div>
+          <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
+            ${this.ui.likeStatus('song', isFav, false, null)}
+          </button>
+          <button class="downloadBtn" data-action="download-song" data-song-id="${song.id}" data-song-title="${song.title}" data-song-thumbnail="${album.coverUrl}" title="Download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button class="moreMenu" data-more-song="${song.id}">
+            ${Icons.general.moreVert(18)}
+          </button>
+        </div>
       </div>
-      <span class="hint">Double-click</span>
-    </div>
-    <div class="body">
-      ${activeAlbum.songs.map((song, i) => this.createSongRow(song, i, artist, activeAlbum)).join('')}
-    </div>
-  </div>
-
-  ${similarIds.length ? this.similarMarquee(rows, artist.id) : ''}
-</div>
-
-<div style="height: 300px;"></div>
-  `;
-}
-
-createSongRow(song, index, artist, album) {
-  const isFav = this.ui.favorites.isSongFavorite(song.id);
-  const isPlaying = this.ui.state.currentSong?.id == song.id;
-  return `
-    <div class="songItem ${isPlaying ? 'playing' : ''}"
-         data-song-id="${song.id}"
-         data-context='${JSON.stringify({ artistId: artist.id, albumId: album.id })}'>
-     
-     <div class="left">
-      <div class="trackNum">${index + 1}</div>
-      <div class="play">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-      </div>
-     </div>
-     
-      <div class="center">
-        <div class="title">${song.title}</div>
-      </div>
-
-     <div class="right">
-      <div class="time">${song.duration}</div>
-      <button class="saveSongBtn" data-save-song="${song.id}" data-save-title="${song.title}">
-        Save
-      </button>
-      <button class="heart ${isFav ? 'favorited' : ''}" data-fav-song="${song.id}">
-        ${this.ui.likeStatus('song', isFav, false, null)}
-      </button>
-      <button class="moreMenu" data-more-song="${song.id}">
-        ${Icons.general.moreVert(18)}
-      </button>
-     </div>
-     
-    </div>
-  `;
-}
+    `;
+  }
 
   similarMarquee(rows, artistId) {
     const configs = [['left', 40], ['right', 45], ['left', 35]];
@@ -703,20 +857,78 @@ createSongRow(song, index, artist, album) {
       <div class="marquee-container">
         <div class="marquee-track marquee-${dir}" style="animation-duration: ${dur}s;">
           ${[...artists, ...artists].map(a => `
-            <span class="artist-name-pill animate-fadeIn" data-artist-id="${a.id}" data-artist-name="${a.artist}">${a.artist}</span>
+            <span class="artist-name-pill animate-fadeIn" data-artist-id="${a.id}" data-artist-name="${a.artist}"
+                  onclick="window.uiManager.showSpinner(); setTimeout(() => { window.uiManager.contentEvents.showArtistPopover('${a.id}', event); window.uiManager.hideSpinner(); }, window.uiManager.popoverDelay);">
+              ${a.artist}
+            </span>
           `).join('')}
         </div>
       </div>
     `;
     return `
-      <div class="similar-artists-section">
+      <div data-area="similar" class="similar-artists-section">
         <h5 class="similar-artists-title">Listen to similar Artists</h5>
         ${rows.map((row, i) => row.length ? marquee(row, ...configs[i]) : '').join('')}
       </div>
     `;
   }
 }
+/***********************************************************************************
+***********************************************************************************/
 
+
+
+
+
+
+
+
+/***********************************************
+          *******  E R R O R  ********
+***********************************************/
+class Error404 {
+  constructor(ui) {
+    this.ui = ui;
+  }
+
+  render() {
+    return `
+    <div data-page="404" class="page animate-fadeInUp">
+      <div class="wrap">
+        <div class="code">404</div>
+        <h1 class="title">Page Not Found</h1>
+        <p class="desc">
+          The page you're looking for doesn't exist or may have been moved.
+        </p>
+        <div class="actions">
+          <button onclick="window.pagesActions.goHome()" class="home">
+            🏠 Take me Home
+          </button>
+          <button onclick="window.history.back()" class="back">
+            ↩ Go Back
+          </button>
+        </div>
+        <div class="note">
+          <p>Error 404 — The requested resource could not be found.</p>
+        </div>
+      </div>
+    </div>
+    `;
+  }
+}
+/***********************************************************************************
+***********************************************************************************/
+
+
+
+
+
+
+
+
+/***********************************************
+        *******  H E L P E R S  ********
+***********************************************/
 if (typeof window !== 'undefined') {
   window.pagesActions = {
     buildSongs() {
@@ -737,26 +949,26 @@ if (typeof window !== 'undefined') {
         )
       );
     },
-    playQueue(queue, index = 0, label = '') {
+    playQueue(queue, index = 0, label = '', source = null) {
       if (!queue.length || !window.uiManager?.audioPlayer) return;
       const safeIndex = Math.max(0, Math.min(index, queue.length - 1));
-      window.uiManager.audioPlayer.playSong(queue[safeIndex], queue, true);
+      window.uiManager.audioPlayer.playSong(queue[safeIndex], queue, true, source);
       if (label) (window.uiManager?.state || window.state)?.showToast?.(label);
     },
-    playSong(songId) {
+    playSong(songId, source = null) {
       const state = window.uiManager?.state || window.state;
       const song = state?.getSongById?.(songId);
-      if (song && window.uiManager?.audioPlayer) window.uiManager.audioPlayer.playSong(song, null, true);
+      if (song && window.uiManager?.audioPlayer) window.uiManager.audioPlayer.playSong(song, null, true, source);
     },
     shuffleAll() {
       const songs = IdUtils.sample(this.buildSongs(), this.buildSongs().length);
-      this.playQueue(songs, 0, 'Shuffling your whole library');
+      this.playQueue(songs, 0, 'Shuffling your whole library', 'home');
     },
     playGenre(genre) {
       const genreSongs = this.buildSongs().filter(song => String(song.genre).toLowerCase() === String(genre).toLowerCase());
       if (!genreSongs.length) return;
       const pick = IdUtils.sample(genreSongs, 1)[0];
-      this.playSong(pick.id);
+      this.playSong(pick.id, 'home');
       (window.uiManager?.state || window.state)?.showToast?.(`Playing ${genre}`);
     },
     playMood(mood) {
@@ -771,7 +983,32 @@ if (typeof window !== 'undefined') {
       const allSongs = this.buildSongs();
       const filtered = allSongs.filter(song => tags.some(tag => String(song.genre).toLowerCase().includes(tag)));
       const queue = IdUtils.sample(filtered.length ? filtered : allSongs, Math.min(12, (filtered.length ? filtered : allSongs).length));
-      this.playQueue(queue, 0, `${mood.charAt(0).toUpperCase() + mood.slice(1)} mix loaded`);
+      this.playQueue(queue, 0, `${mood.charAt(0).toUpperCase() + mood.slice(1)} mix loaded`, 'home');
+    },
+    openStatsDashboard() {
+      if (!window.uiManager || !window.state) return;
+      window.state.modalOpen(window.uiManager.homePage.statsDashboard());
+    },
+    goHome() {
+      const state = window.uiManager?.state || window.state;
+      if (state) {
+        state.is404 = false;
+        window.uiManager?.navigate('home');
+      }
     }
   };
 }
+/***********************************************************************************
+***********************************************************************************/
+
+
+
+
+
+/**
+*
+*  Copyright Cole Hanson
+*
+*        2 0 2 6
+*
+**/

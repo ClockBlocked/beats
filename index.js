@@ -9,8 +9,10 @@
  *   5. core.js       — Icons, Router, AppListeners, ContentEventManager, SearchManager
  *   6. players.js    — PlayerManager, MediaSessionManager
  *   7. pages.js      — Home, Library, Favorites, Playlists, Artists page builders
- *   8. UIManager.js  — UIManager class (slim)
- *   9. main.js       — bootstrap
+ *   8. progress.js   — NProgress page-load progress bar
+ *   9. ytSaver.js    — SaveToLibraryDrawer (createSaveDrawer)
+ *  10. UIManager.js  — UIManager class (slim)
+ *  11. main.js       — bootstrap
  */
 (function() {
   'use strict';
@@ -26,6 +28,8 @@
     '/beats/modules/core.js',
     '/beats/modules/players.js',
     '/beats/modules/pages.js',
+    '/beats/modules/progress.js',
+    '/beats/modules/ytSaver.js',
     '/beats/modules/UIManager.js',
     '/beats/modules/main.js'
   ];

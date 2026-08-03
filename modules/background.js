@@ -1,6 +1,52 @@
-// CONFIG and Utils moved to utilities.js.
-// PlayerState and AudioEngine continue using the global CONFIG/Utils
-// defined there because utilities.js loads first.
+
+
+if (typeof Utils === 'undefined') {
+  window.Utils = {};
+}
+
+Utils.id = Utils.id || function (rawId) {
+  if (rawId == null) return '';
+  return String(rawId).trim();
+};
+
+Utils.slugify = Utils.slugify || function (str) {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+Utils.newId = Utils.newId || function (prefix) {
+  return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+};
+
+Utils.formatTime = Utils.formatTime || function (secs) {
+  const s = Math.round(secs || 0);
+  const m = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return `${m}:${ss}`;
+};
+
+Utils.clamp = Utils.clamp || function (val, min, max) {
+  return Math.max(min, Math.min(max, val));
+};
+
+Utils.shuffled = Utils.shuffled || function (arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+
+
+
+
+
+
+
 
 
 class PlayerState {
@@ -16,11 +62,14 @@ class PlayerState {
     this.selectedAlbumId    = null;
     this.isSearchOpen       = false;
     this.searchQuery        = '';
+    this.pendingDeepLinkSong = null;
 
     this.currentSong   = null;
     this.isPlaying     = false;
     this.currentTime   = 0;
     this.duration      = 0;
+    this.playSource    = null;
+    this.audioError    = null;
     this.queue         = [];
     this.queueIndex    = -1;
     this.recentlyPlayed = [];
@@ -31,6 +80,8 @@ class PlayerState {
     this.isDrawerOpen  = false;
     this.playbackRate  = 1;
     this.sleepTimerId  = null;
+    this.sleepTimerEndsAt = null;
+    this.sleepTimerTrackEnd = false;
     this.isQueueOpen   = false;
     this.isLyricsOpen  = false;
 
@@ -39,16 +90,15 @@ class PlayerState {
     this.favoriteAlbums  = [];
     this.playlists       = [];
 
+    this.playCounts  = {};
+    this.listenStats = { totalSeconds: 0, plays: 0, perArtist: {}, perSong: {} };
+
     this.loadPersisted();
 
-    this.loadingBarEl = document.getElementById('loading-bar');
     this.modalOverlay = document.getElementById('modal-overlay');
     this.modalEl      = document.getElementById('modal');
     this.toastEl      = document.getElementById('toast');
 
-    this.loadingProgress = 0;
-    this.loadingTimer    = null;
-    this.loadingStart    = 0;
   }
 
 
@@ -91,8 +141,6 @@ class PlayerState {
   getAlbumById(id) {
     const album = this.albumsById.get(Utils.id(id));
     if (!album) return undefined;
-    // Name is resolved here purely for frontend display convenience —
-    // the lookup itself was already done by id above.
     const artist = this.artistsById.get(album.artistId);
     return { ...album, artistName: artist ? artist.artist : undefined };
   }
@@ -120,8 +168,6 @@ class PlayerState {
     return this.getAlbumById(id)?.album;
   }
   getSongName(id) {
-    // Adjust `.title` to match whatever field your metadata uses for a
-    // song's display name (e.g. `.title` or `.name`).
     const song = this.getSongById(id);
     return song?.title ?? song?.name;
   }
@@ -133,7 +179,7 @@ class PlayerState {
       name: name || 'Unnamed',
       description,
       tags,
-      songs: [] // song ids only
+      songs: []
     };
     this.playlists.push(playlist);
     this.persist();
@@ -149,11 +195,82 @@ class PlayerState {
     this.persist();
   }
 
+  buildPlaylistQueue(id) {
+    const pl = this.getPlaylistById(id);
+    if (!pl) return [];
+    return pl.songs.map(sid => this.getSongById(sid)).filter(Boolean);
+  }
 
 
+  getPlayCount(id) {
+    return this.playCounts[Utils.id(id)] || 0;
+  }
+  incrementPlayCount(id) {
+    const key = Utils.id(id);
+    if (!key) return;
+    this.playCounts[key] = (this.playCounts[key] || 0) + 1;
+    try {
+      localStorage.setItem('mybeats.playCounts.v1', JSON.stringify(this.playCounts));
+    } catch (e) {}
+  }
+  getMostPlayed(limit = 8) {
+    return Object.entries(this.playCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id]) => this.getSongById(id))
+      .filter(Boolean);
+  }
 
-///////////////////////////////////  H E L P E R S  //////
-//////////////////////////////////////////////////////////
+  recordPlay(song) {
+    if (!song) return;
+    this.incrementPlayCount(song.id);
+    const stats = this.listenStats;
+    stats.plays = (stats.plays || 0) + 1;
+    const artistId = Utils.id(song.artistId);
+    if (artistId) {
+      const entry = stats.perArtist[artistId] || (stats.perArtist[artistId] = { seconds: 0, plays: 0 });
+      entry.plays += 1;
+    }
+    this._saveListenStats();
+  }
+
+  recordListenTime(song, seconds) {
+    if (!song || !(seconds > 0)) return;
+    const stats = this.listenStats;
+    stats.totalSeconds = (stats.totalSeconds || 0) + seconds;
+    const artistId = Utils.id(song.artistId);
+    if (artistId) {
+      const entry = stats.perArtist[artistId] || (stats.perArtist[artistId] = { seconds: 0, plays: 0 });
+      entry.seconds += seconds;
+    }
+    const songId = Utils.id(song.id);
+    if (songId) stats.perSong[songId] = (stats.perSong[songId] || 0) + seconds;
+    this._saveListenStats();
+  }
+
+  _saveListenStats() {
+    try {
+      localStorage.setItem('mybeats.listenStats.v1', JSON.stringify(this.listenStats));
+    } catch (e) {}
+  }
+
+  getTopArtistsByPlays(limit = 5) {
+    return Object.entries(this.listenStats.perArtist || {})
+      .sort((a, b) => b[1].plays - a[1].plays)
+      .slice(0, limit)
+      .map(([id, data]) => ({ artist: this.getArtistById(id), plays: data.plays, seconds: data.seconds }))
+      .filter(entry => entry.artist);
+  }
+
+  getTopSongsByTime(limit = 5) {
+    return Object.entries(this.listenStats.perSong || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id, seconds]) => ({ song: this.getSongById(id), seconds }))
+      .filter(entry => entry.song);
+  }
+
+
   formatTime(s) { return Utils.formatTime(s); }
 
   loadPersisted() {
@@ -166,8 +283,19 @@ class PlayerState {
       name:        pl.name        || 'Unnamed',
       description: pl.description || '',
       tags:        pl.tags        || [],
-      songs:       pl.songs       || []   // stored as song IDs
+      songs:       pl.songs       || []
     }));
+
+    this.playCounts = this.parseStore('mybeats.playCounts.v1', {});
+    const stats = this.parseStore('mybeats.listenStats.v1', null);
+    if (stats && typeof stats === 'object') {
+      this.listenStats = {
+        totalSeconds: Number(stats.totalSeconds) || 0,
+        plays:        Number(stats.plays) || 0,
+        perArtist:    stats.perArtist && typeof stats.perArtist === 'object' ? stats.perArtist : {},
+        perSong:      stats.perSong && typeof stats.perSong === 'object' ? stats.perSong : {}
+      };
+    }
   }
   parseStore(key, fallback) {
     try {
@@ -192,58 +320,6 @@ class PlayerState {
     this.toastTimer = setTimeout(() => this.toastEl.classList.remove('show'), 2500);
   }
 
-  loadingBarStart(callback) {
-    this.loadingStart = performance.now();
-    this.loadingProgress = 0;
-    clearInterval(this.loadingTimer);
-
-    this.loadingBarEl?.classList.remove('hidden', 'complete');
-    this.loadingBarEl?.classList.add('active');
-    if (this.loadingBarEl) this.loadingBarEl.style.width = '2%';
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this.loadingTimer = setInterval(() => {
-          if (this.loadingProgress >= 90) return;
-          const increment = (Math.random() * 5) + (this.loadingProgress < 25 ? 6 : 1.5);
-          this.loadingProgress = Math.min(this.loadingProgress + increment, 90);
-          if (this.loadingBarEl) this.loadingBarEl.style.width = this.loadingProgress + '%';
-        }, 180);
-
-        if (typeof callback === 'function') callback();
-      });
-    });
-  }
-  loadingBarComplete() {
-    clearInterval(this.loadingTimer);
-    const elapsed = performance.now() - this.loadingStart;
-    const wait = Math.max(0, (CONFIG.LOADING.minVisibleMs - elapsed) + CONFIG.LOADING.extraDelayMs);
-
-    setTimeout(() => {
-      if (this.loadingBarEl) {
-        this.loadingBarEl.style.width = '100%';
-        this.loadingBarEl.classList.add('complete');
-      }
-      setTimeout(() => {
-        this.loadingBarEl?.classList.add('hidden');
-        setTimeout(() => {
-          this.loadingBarEl?.classList.remove('active', 'complete');
-          if (this.loadingBarEl) this.loadingBarEl.style.width = '0%';
-          this.loadingProgress = 0;
-        }, CONFIG.LOADING.settleMs);
-      }, CONFIG.LOADING.fillMs);
-    }, wait);
-  }
-  waitForProgress(target = 20) {
-    return new Promise(resolve => {
-      const check = () => {
-        if (this.loadingProgress >= target) resolve();
-        else requestAnimationFrame(check);
-      };
-      check();
-    });
-  }
-
   modalOpen(content) {
     if (!this.modalEl || !this.modalOverlay) return;
     this.modalEl.innerHTML = content;
@@ -259,7 +335,6 @@ class PlayerState {
 
 
   
-//  Temporary for backwards compatibility
 findArtistById(id)          { return this.getArtistById(id); }
 findAlbumById(albumId)      { return this.getAlbumById(albumId); }
 findSong(id)                { return this.getSongById(id); }
@@ -286,7 +361,6 @@ getArtistByIdOrName(idOrName) {
   if (byId) return byId;
   return [...this.artistsById.values()].find(a => a.artist === idOrName || String(a.id) === String(idOrName));
 }
-//////////////////////////////////////////////////////////  
 }
 
 
@@ -296,6 +370,13 @@ class AudioEngine {
     this.state = state;
     this.audio = document.getElementById('global-audio');
     this.mediaSessionManager = null;
+    this._coverBufferTimer = null;
+    this._missingGuard = null;
+    this._missingSkipChain = false;
+    this._fadeRaf = null;
+    this._listenPending = 0;
+    this._listenPrevPos = null;
+    this._listenLastFlush = 0;
     if (!this.audio) {
       console.error('[AudioEngine] <audio id="global-audio"> not found in DOM.');
     }
@@ -311,12 +392,13 @@ class AudioEngine {
     this.audio.addEventListener('timeupdate', () => {
       this.state.currentTime = this.audio.currentTime;
       window.uiManager?.updateProgressOnly();
+      this._trackListenTime();
     });
     this.audio.addEventListener('loadedmetadata', () => {
       this.state.duration = this.audio.duration || 0;
       window.uiManager?.updateProgressOnly();
     });
-    this.audio.addEventListener('ended', () => this.skipForward());
+    this.audio.addEventListener('ended', () => this.handleTrackEnded());
     this.audio.addEventListener('play', () => {
       this.state.isPlaying = true;
       this.notifyPlaybackChange();
@@ -328,9 +410,44 @@ class AudioEngine {
     this.audio.addEventListener('error', (e) => {
       const err = e.target.error;
       console.error('[AudioEngine] Audio error! code:', err?.code, '| message:', err?.message, '| src:', this.audio.src);
-      this.state.loadingBarComplete?.();
-      this.skipForward();
+      const song = this.state.currentSong;
+      if (!song || !err) return;
+      if (!this.audio.src || this.audio.src === 'about:blank') return;
+      if (song.downloadPath && !this.audio.src.endsWith(song.downloadPath)) return;
+      this.handleMissingAudio(song);
     });
+  }
+
+  handleTrackEnded() {
+    if (this.state.sleepTimerTrackEnd) {
+      this.state.sleepTimerTrackEnd = false;
+      this.audio.pause();
+      this.state.isPlaying = false;
+      window.uiManager?.player?.updateSleepBadge?.();
+      document.getElementById('sleep-btn')?.classList.remove('active');
+      this.notifyPlaybackChange();
+      this.state.showToast('Sleep timer — stopped after the track');
+      return;
+    }
+    this.skipForward();
+  }
+
+  _trackListenTime() {
+    const now = Date.now();
+    const pos = this.audio.currentTime;
+    if (this._listenPrevPos != null && !this.audio.paused) {
+      const delta = pos - this._listenPrevPos;
+      if (delta > 0 && delta < 2) this._listenPending += delta;
+    }
+    this._listenPrevPos = pos;
+    if (!this._listenLastFlush) this._listenLastFlush = now;
+    if (now - this._listenLastFlush >= 5000) {
+      this._listenLastFlush = now;
+      if (this._listenPending > 0 && this.state.currentSong) {
+        this.state.recordListenTime(this.state.currentSong, this._listenPending);
+        this._listenPending = 0;
+      }
+    }
   }
 
   notifyPlaybackChange() {
@@ -342,7 +459,7 @@ class AudioEngine {
   refreshQueueIfOpen() {
     const queueModal = document.getElementById('queue-modal');
     if (queueModal?.classList.contains('open')) {
-      window.uiManager?.renderQueueList();
+      window.uiManager?.player?.renderQueueList?.();
     }
   }
 
@@ -352,7 +469,6 @@ class AudioEngine {
       console.warn('[AudioEngine] restorePlaybackState aborted — missing song or audio element');
       return;
     }
-    this.state.loadingBarStart();
 
     if (queue && queue.length) {
       this.state.queue = queue;
@@ -393,12 +509,10 @@ class AudioEngine {
             this.state.isPlaying = false;
           })
           .finally(() => {
-            this.state.loadingBarComplete();
             this.notifyPlaybackChange();
           });
       } else {
         this.state.isPlaying = false;
-        this.state.loadingBarComplete();
         this.notifyPlaybackChange();
       }
     };
@@ -413,18 +527,30 @@ class AudioEngine {
       this.audio.addEventListener('loadedmetadata', onMetadata, { once: true });
       setTimeout(() => {
         this.audio.removeEventListener('loadedmetadata', onMetadata);
-        this.state.loadingBarComplete();
         this.notifyPlaybackChange();
       }, 8000);
     }
   }
 
-  playSong(song, newQueue = null, startFromBeginning = false) {
+  playSong(song, newQueue = null, startFromBeginning = false, source = null) {
     if (!song) {
       console.warn('[AudioEngine] playSong called with no song');
       return;
     }
     console.log('[AudioEngine] playSong called:', song.title || 'unknown', '| id:', song.id, '| src:', song.downloadPath, '| startFromBeginning:', startFromBeginning);
+    this.state.audioError = null;
+    this._missingGuard = null;
+    this._listenPrevPos = null;
+    if (source) {
+      this.state.playSource = source;
+      this._missingSkipChain = false;
+    }
+    window.uiManager?.player?.showCoverBuffer();
+    clearTimeout(this._coverBufferTimer);
+    this._coverBufferTimer = setTimeout(() => {
+      this._coverBufferTimer = null;
+      window.uiManager?.player?.hideCoverBuffer();
+    }, 2000);
 
     if (startFromBeginning || this.audio.src !== song.downloadPath) {
       this.audio.currentTime = 0;
@@ -445,7 +571,6 @@ class AudioEngine {
 
   preparePlayback(song, newQueue) {
     console.log('[AudioEngine] preparePlayback:', song.title || 'unknown', '| downloadPath:', song.downloadPath);
-    this.state.loadingBarStart();
     this.resolveQueueForSong(song, newQueue);
     this.extractTheme(song.coverUrl);
     this.state.currentSong = song;
@@ -486,17 +611,46 @@ class AudioEngine {
 
   handlePlaySuccess() {
     this.state.isPlaying = true;
-    this.state.loadingBarComplete();
+    this._fadeInIfEnabled();
     this.mediaSessionManager?.updateMetadata(this.state.currentSong);
     this.notifyPlaybackChange();
     this.bumpRecentlyPlayed(this.state.currentSong);
+    this.state.recordPlay(this.state.currentSong);
   }
 
   handlePlayFailure(err) {
     console.warn('[AudioEngine] Playback failed:', err);
+    if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+      this.state.isPlaying = false;
+      this.notifyPlaybackChange();
+      return;
+    }
+    if (this.state.currentSong) {
+      this.handleMissingAudio(this.state.currentSong);
+    } else {
+      this.state.isPlaying = false;
+      this.notifyPlaybackChange();
+    }
+  }
+
+  handleMissingAudio(song) {
+    if (!song) return;
+    if (this._missingGuard === song.id) return;
+    this._missingGuard = song.id;
+    console.warn('[AudioEngine] Audio file not found for song:', song.id, '| title:', song.title);
+    clearTimeout(this._coverBufferTimer);
+    this._coverBufferTimer = null;
+    window.uiManager?.player?.hideCoverBuffer();
+    if (this.state.playSource === 'playlist' || this.state.playSource === 'queue') {
+      this._missingSkipChain = true;
+      this.state.showToast('Audio file not found — skipping to next');
+      this.skipForward();
+      return;
+    }
     this.state.isPlaying = false;
-    this.state.loadingBarComplete();
+    this.state.audioError = song.id;
     this.notifyPlaybackChange();
+    this.state.showToast(`Audio file not found: "${song.title || song.name || 'Unknown'}"`);
   }
 
   bumpRecentlyPlayed(song) {
@@ -541,13 +695,23 @@ class AudioEngine {
       if (this.state.repeatMode === 'all') {
         nextIdx = 0;
       } else {
-        this.state.isPlaying = false;
-        this.notifyPlaybackChange();
+        if (!this._missingSkipChain && this.startRadioContinuation()) return;
+        const stopPlayback = () => {
+          this.state.isPlaying = false;
+          this.audio.volume = this.state.isMuted ? 0 : this.state.volume;
+          this.notifyPlaybackChange();
+        };
+        if (this._shouldFade()) this._fadeTo(0, 600, stopPlayback);
+        else stopPlayback();
         return;
       }
     }
-    this.state.queueIndex = nextIdx;
-    this.playSong(this.state.queue[this.state.queueIndex], this.state.queue);
+    const advance = () => {
+      this.state.queueIndex = nextIdx;
+      this.playSong(this.state.queue[this.state.queueIndex], this.state.queue);
+    };
+    if (this._shouldFade()) this._fadeTo(0, 600, advance);
+    else advance();
   }
 
   skipBack() {
@@ -565,16 +729,101 @@ class AudioEngine {
         return;
       }
     }
-    this.state.queueIndex = prevIdx;
-    this.playSong(this.state.queue[this.state.queueIndex], this.state.queue);
+    const advance = () => {
+      this.state.queueIndex = prevIdx;
+      this.playSong(this.state.queue[this.state.queueIndex], this.state.queue);
+    };
+    if (this._shouldFade()) this._fadeTo(0, 600, advance);
+    else advance();
+  }
+
+  startRadioContinuation() {
+    if (!Prefs.get('radioAutoplay')) return false;
+    const state = this.state;
+    const current = state.currentSong;
+    const allSongs = state.enrichedLibrary.flatMap(artist =>
+      artist.albums.flatMap(album =>
+        album.songs.map(song => ({
+          ...song,
+          artistId: artist.id,
+          albumId: album.id,
+          artist: artist.artist,
+          album: album.album,
+          coverUrl: album.coverUrl,
+          artistImageUrl: artist.imageUrl,
+          genre: artist.genre || ''
+        }))
+      )
+    );
+    if (!allSongs.length) return false;
+    const inQueue = new Set(state.queue.map(s => Utils.id(s.id)));
+    let pool = [];
+    if (current?.artistId) {
+      pool = allSongs.filter(s => Utils.id(s.artistId) === Utils.id(current.artistId) && !inQueue.has(Utils.id(s.id)));
+    }
+    if (!pool.length) {
+      const genre = current?.artistId ? state.getArtistById(current.artistId)?.genre : null;
+      if (genre) pool = allSongs.filter(s => s.genre === genre && !inQueue.has(Utils.id(s.id)));
+    }
+    if (!pool.length) {
+      pool = allSongs.filter(s => !inQueue.has(Utils.id(s.id)));
+    }
+    if (!pool.length) return false;
+    const queue = Utils.shuffled(pool).slice(0, 15);
+    state.showToast('Radio — continuing with similar songs');
+    this.playSong(queue[0], queue, true);
+    return true;
+  }
+
+  _shouldFade() {
+    return !!Prefs.get('fadeTransitions') && this.state.isPlaying && !this.state.isMuted;
+  }
+
+  _fadeInIfEnabled() {
+    const target = this.state.isMuted ? 0 : this.state.volume;
+    if (!Prefs.get('fadeTransitions') || this.state.isMuted) {
+      this._fadeCancel();
+      this.audio.volume = target;
+      return;
+    }
+    this.audio.volume = 0;
+    this._fadeTo(target, 900);
+  }
+
+  _fadeCancel() {
+    if (this._fadeRaf) {
+      cancelAnimationFrame(this._fadeRaf);
+      this._fadeRaf = null;
+    }
+  }
+
+  _fadeTo(target, duration, onDone) {
+    this._fadeCancel();
+    const audio = this.audio;
+    const startVol = audio.volume;
+    const startTime = performance.now();
+    const step = (now) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      audio.volume = Utils.clamp(startVol + (target - startVol) * t, 0, 1);
+      if (t < 1) {
+        this._fadeRaf = requestAnimationFrame(step);
+      } else {
+        this._fadeRaf = null;
+        audio.volume = Utils.clamp(target, 0, 1);
+        if (onDone) onDone();
+      }
+    };
+    this._fadeRaf = requestAnimationFrame(step);
   }
 
   setVolume(val) {
+    this._fadeCancel();
     this.state.volume = Utils.clamp(val, 0, 1);
     this.audio.volume = this.state.isMuted ? 0 : this.state.volume;
   }
 
   toggleMute() {
+    this._fadeCancel();
     this.state.isMuted = !this.state.isMuted;
     this.audio.volume = this.state.isMuted ? 0 : this.state.volume;
     if (this.state.isDrawerOpen) window.uiManager?.updateFullPlayer();
@@ -598,3 +847,4 @@ class AudioEngine {
     if (this.state.isDrawerOpen) window.uiManager?.updateFullPlayer();
   }
 }
+
