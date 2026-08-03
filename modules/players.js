@@ -8,7 +8,12 @@
  * Dependencies: Icons, IdUtils, Utils (from utilities.js); state/audioPlayer globals
  */
 class PlayerManager {
-  constructor(ui) { this.ui = ui; }
+  constructor(ui) {
+    this.ui = ui;
+    this._coverBufferVisible = false;
+    this._sleepBadgeTimer = null;
+    this._dragQueueIdx = null;
+  }
 
   renderMiniPlayer() {
     const container = document.getElementById('player-bar-container');
@@ -18,33 +23,37 @@ class PlayerManager {
     const pauseSVG = Icons.player.pause(22);
     const playSVG = Icons.player.play(22);
     const skipSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="20" height="20"><path opacity=".4" fill="currentColor" d="M0 72L0 440c0 14.7 8.1 28.2 21 35.2s28.7 6.3 41-1.8l258-169.6 0-95.7-258-169.6c-12.3-8.1-28-8.8-41-1.8S0 57.3 0 72z"/><path fill="currentColor" d="M352 32l0 0c17.7 0 32 14.3 32 32l0 384c0 17.7-14.3 32-32 32l0 0c-17.7 0-32-14.3-32-32l0-384c0-17.7 14.3-32 32-32z"/></svg>`;
-    const defaultCover = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23666"/%3E%3C/svg%3E';
+    const defaultCover = CONFIG.DEFAULT_COVER;
     const coverUrl = currentSong ? currentSong.coverUrl : defaultCover;
     const title = currentSong ? currentSong.title : 'MyBeats';
     const artistDisplay = currentSong ? this.ui.artistNameTooltip(currentSong.artistId) : 'Music';
+    const isFav = currentSong ? this.ui.favorites.isSongFavorite(currentSong.id) : false;
 
     container.innerHTML = `
-      <div class="mini-player">
+      <div data-player="mini" class="mini-player">
         <div class="mini-player-inner" id="open-drawer">
-          <div class="h-1 w-full" style="background: var(--player-secondary);">
+          <div class="track">
             <div class="mini-progress" id="mini-progress"
-                 style="width: ${progress}%; background: var(--player-accent);"></div>
+                 style="width: ${progress}%;"></div>
           </div>
-          <div class="flex items-center gap-3 px-3 py-2.5 md:px-4 md:py-3">
-            <div class="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
-              <img src="${coverUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+          <div class="bar">
+            <div class="mini-cover cover">
+              <img src="${coverUrl}" class="mini-cover-img" onerror="this.style.display='none'">
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-semibold text-sm truncate">${title}</p>
-              <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">
+            <div class="info">
+              <p class="title">${title}</p>
+              <p class="sub">
                 ${artistDisplay}
               </p>
             </div>
-            <div class="flex items-center gap-1">
-              <button id="toggle-play-mini" class="p-2.5 rounded-full transition-colors hover:bg-interactive" ${!currentSong ? 'disabled style="opacity:0.5"' : ''}>
+            <div class="actions">
+              <button id="fav-mini" class="${isFav ? 'favorited' : ''}" ${!currentSong ? 'disabled' : ''}>
+                ${currentSong ? this.ui.likeStatus('song', isFav, false, null) : Icons.hearts.notLiked()}
+              </button>
+              <button id="toggle-play-mini" class="toggle" ${!currentSong ? 'disabled' : ''}>
                 ${currentSong ? (state.isPlaying ? pauseSVG : playSVG) : playSVG}
               </button>
-              <button id="skip-forward-mini" class="p-2 rounded-full transition-colors hover:bg-interactive" ${!currentSong ? 'disabled style="opacity:0.5"' : ''}>
+              <button id="skip-forward-mini" ${!currentSong ? 'disabled' : ''}>
                 ${skipSVG}
               </button>
             </div>
@@ -59,6 +68,13 @@ class PlayerManager {
     }
 
     if (currentSong) {
+      const favBtn = document.getElementById('fav-mini');
+      if (favBtn) {
+        favBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.ui.toggleFavAndReRender(currentSong.id);
+        };
+      }
       const toggleBtn = document.getElementById('toggle-play-mini');
       if (toggleBtn) {
         toggleBtn.onclick = (e) => {
@@ -74,6 +90,9 @@ class PlayerManager {
         };
       }
     }
+
+    this.applyPlaybackErrorState();
+    if (this._coverBufferVisible) this.showCoverBuffer();
   }
 
   updateProgressOnly() {
@@ -87,6 +106,38 @@ class PlayerManager {
     if (currentTimeEl) currentTimeEl.textContent = state.formatTime(state.currentTime);
     const totalTimeEl = document.getElementById('total-time');
     if (totalTimeEl) totalTimeEl.textContent = state.formatTime(state.duration);
+  }
+
+  showCoverBuffer() {
+    this._coverBufferVisible = true;
+    const cover = document.querySelector('#player-bar-container .mini-cover');
+    if (!cover) return;
+    if (cover.querySelector('.mini-cover-buffer')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'mini-cover-buffer';
+    const circle = document.createElement('div');
+    circle.className = 'spnr-circle';
+    overlay.appendChild(circle);
+    cover.appendChild(overlay);
+  }
+
+  hideCoverBuffer() {
+    this._coverBufferVisible = false;
+    document.querySelectorAll('#player-bar-container .mini-cover-buffer').forEach(el => el.remove());
+  }
+
+  applyPlaybackErrorState() {
+    const state = this.ui.state;
+    const hasError = !!(state.audioError && state.currentSong && state.audioError === state.currentSong.id);
+    if (hasError) this.hideCoverBuffer();
+    const miniInner = document.querySelector('#player-bar-container .mini-player-inner');
+    if (miniInner) miniInner.classList.toggle('audio-missing', hasError);
+    ['toggle-play-mini', 'skip-forward-mini', 'play-pause-drawer', 'prev-btn', 'next-btn', 'shuffle-btn', 'like-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      if (hasError) btn.setAttribute('disabled', '');
+      else if (state.currentSong) btn.removeAttribute('disabled');
+    });
   }
 
   openDrawer() {
@@ -123,7 +174,7 @@ class PlayerManager {
 
     document.getElementById('full-player-drawer')?.remove();
 
-    const defaultCover = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23666"/%3E%3C/svg%3E';
+    const defaultCover = CONFIG.DEFAULT_COVER;
     const title = song ? song.title : 'MyBeats';
     const artistDisplay = song ? this.ui.artistNameTooltip(song.artistId) : 'Music';
     const coverUrl = song ? song.coverUrl : defaultCover;
@@ -135,8 +186,7 @@ class PlayerManager {
     const playSVG = Icons.player.play(32);
 
     document.body.insertAdjacentHTML('beforeend', `
-      <div class="player-drawer open" id="full-player-drawer"
-           style="background: var(--player-gradient); transition: var(--theme-transition);">
+      <div data-player="full" class="player-drawer open" id="full-player-drawer">
         <div class="dot-pattern"></div>
         <div class="drawerUpper">
           <svg class="playerStripe" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 1422 800">
@@ -158,9 +208,9 @@ class PlayerManager {
             <img src="${coverUrl}" alt="${title}" class="album-art">
           </div>
 
-          <div class="relative z-20 text-center mt-8 px-6" style="position: relative; z-index: 10;">
-            <h1 class="text-2xl font-bold text-white mb-2 tracking-tight truncate">${title}</h1>
-            <p class="text-sm text-slate-400 font-medium truncate">${artistDisplay}</p>
+          <div class="meta">
+            <h1 class="title">${title}</h1>
+            <p class="sub">${artistDisplay}</p>
           </div>
 
           <canvas id="visualizer"></canvas>
@@ -190,7 +240,7 @@ class PlayerManager {
 
           <div class="controls">
             <button class="control-btn ${state.isShuffled ? 'active' : ''}" id="shuffle-btn" ${disabledAttr}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22"><path opacity=".4" fill="currentColor" d="M0 384c0 17.7 14.3 32 32 32l64 0c30.2 0 58.7-14.2 76.8-38.4L224 309.3c-13.3-17.8-26.7-35.6-40-53.3l-62.4 83.2c-6 8.1-15.5 12.8-25.6 12.8l-64 0c-17.7 0-32 14.3-32 32zM224 202.7c13.3 17.8 26.7 35.6 40 53.3l62.4-83.2c6-8.1 15.5-12.8 25.6-12.8l32 0 0 32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c6-6 9.4-14.1 9.4-22.6s-3.4-16.6-9.4-22.6l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S384 51.1 384 64l0 32-32 0c-30.2 0-58.7 14.2-76.8 38.4L224 202.7z"/><path fill="currentColor" d="M352 416c-30.2 0-58.7-14.2-76.8-38.4L121.6 172.8c-6-8.1-15.5-12.8-25.6-12.8l-64 0c-17.7 0-32-14.3-32-32S14.3 96 32 96l64 0c30.2 0 58.7 14.2 76.8 38.4L326.4 339.2c6 8.1 15.5 12.8 25.6 12.8l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9S384 460.9 384 448l0-32-32 0z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22"><path opacity=".4" fill="currentColor" d="M0 384c0 17.7 14.3 32 32 32l64 0c30.2 0 58.7-14.2 76.8-38.4L224 309.3c-13.3-17.8-26.7-35.6-40-53.3l-62.4 83.2c-6 8.1-15.5 12.8-25.6 12.8l-64 0c-17.7 0-32 14.3-32 32zM224 202.7c13.3 17.8 26.7 35.6 40 53.3l62.4-83.2c6-8.1 15.5-12.8 25.6-12.8l32 0 0 32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c6-6 9.4-14.1 9.4-22.6s-3.4-16.6-9.4-22.6l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S384 51.1 384 64l0 32-32 0c-30.2 0-58.7 14.2-76.8 38.4L224 202.7z"/><path fill="currentColor" d="M352 416c-30.2 0-58.7-14.2-76.8-38.4L121.6 172.8c-6-8.1-15.5-12.8-25.6-12.8l-64 0c-17.7 0-32-14.3-32-32S14.3 96 32 96l64 0c30.2 0 58.7 14.2 76.8 38.4L326.4 339.2c6 8.1 15.5 12.8 25.6 12.8l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2-9.2-22.9-11.9-34.9-6.9S384 460.9 384 448l0-32-32 0z"/></svg>
             </button>
             <button class="control-btn" id="prev-btn" ${disabledAttr}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="28" height="28"><path opacity=".4" fill="currentColor" d="M64 208.1l0 95.7 258 169.6c12.3 8.1 28 8.8 41 1.8s21-20.5 21-35.2l0-368c0-14.7-8.1-28.2-21-35.2s-28.7-6.3-41 1.8L64 208.1z"/><path fill="currentColor" d="M32 32l0 0C14.3 32 0 46.3 0 64L0 448c0 17.7 14.3 32 32 32l0 0c17.7 0 32-14.3 32-32L64 64c0-17.7-14.3-32-32-32z"/></svg>
@@ -210,10 +260,14 @@ class PlayerManager {
         <div class="queue-modal ${state.isQueueOpen ? 'open' : ''}" id="queue-modal">
           <div class="drag-handle"></div>
           <div class="queue-header">
-            <h3 class="text-lg font-bold">Up Next</h3>
-            <button class="control-btn" id="close-queue">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            <h3 class="title">Up Next</h3>
+            <div class="queue-header-actions">
+              <button class="queue-action-btn" id="queue-save-playlist" title="Save remaining queue as a playlist">Save as Playlist</button>
+              <button class="queue-action-btn" id="queue-clear" title="Clear upcoming songs">Clear</button>
+              <button class="control-btn" id="close-queue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
           </div>
           <div class="queue-list" id="queue-list"></div>
         </div>
@@ -221,7 +275,7 @@ class PlayerManager {
         <div class="lyrics-overlay ${state.isLyricsOpen ? 'visible' : ''}" id="lyrics-overlay">
           <div class="lyrics-text">
             <p>Lyrics will appear here</p>
-            <p class="text-sm text-slate-400 mt-4">Tap anywhere to close</p>
+            <p class="hint">Tap anywhere to close</p>
           </div>
         </div>
       </div>
@@ -265,6 +319,7 @@ class PlayerManager {
       likeBtn.classList.toggle('favorited', isFav);
       likeBtn.innerHTML = this.ui.likeStatus('song', isFav, false, null);
     }
+    this.applyPlaybackErrorState();
   }
 
   attachFullPlayerEvents() {
@@ -277,6 +332,8 @@ class PlayerManager {
     document.getElementById('player-drawer-overlay')?.addEventListener('click', () => this.ui.closePlayerDrawer());
     document.getElementById('queue-toggle')?.addEventListener('click', () => this.toggleQueue());
     document.getElementById('close-queue')?.addEventListener('click', () => this.closeQueue());
+    document.getElementById('queue-clear')?.addEventListener('click', () => this.clearQueue());
+    document.getElementById('queue-save-playlist')?.addEventListener('click', () => this.saveQueueAsPlaylist());
 
     if (song) {
       document.getElementById('play-pause-drawer')?.addEventListener('click', () => this.ui.audioPlayer.togglePlay());
@@ -349,6 +406,8 @@ class PlayerManager {
     }
 
     this.ui.contentEvents.attachHeartEvents();
+    this.applyPlaybackErrorState();
+    this.updateSleepBadge();
   }
 
   renderQueueList() {
@@ -357,28 +416,132 @@ class PlayerManager {
     const state = this.ui.state;
     list.innerHTML = '';
     if (!state.queue.length) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;color:hsl(var(--text-secondary));">Queue is empty</div>';
+      list.innerHTML = '<div class="empty">Queue is empty</div>';
       return;
     }
     state.queue.forEach((s, idx) => {
       const item = document.createElement('div');
       item.className = `queue-item ${idx === state.queueIndex ? 'active' : ''}`;
-      item.onclick = () => {
-        this.ui.audioPlayer.playSong(s, state.queue, true);
+      item.draggable = true;
+      item.dataset.queueIdx = idx;
+      item.onclick = (e) => {
+        if (e.target.closest('.queue-item-remove') || e.target.closest('.queue-drag-handle')) return;
+        this.ui.audioPlayer.playSong(s, state.queue, true, 'queue');
         this.closeQueue();
       };
       const indicator = idx === state.queueIndex
         ? `<div class="now-playing-indicator"><div class="bar-anim"></div><div class="bar-anim"></div><div class="bar-anim"></div></div>`
-        : `<span class="text-slate-500 text-sm">${idx + 1}</span>`;
+        : `<span class="num">${idx + 1}</span>`;
       item.innerHTML = `
+        <span class="queue-drag-handle" title="Drag to reorder">${Icons.general.dragHandle(14)}</span>
         <img src="${s.coverUrl}" class="queue-item-thumb">
         <div class="queue-item-info">
           <div class="queue-item-title">${s.title}</div>
           <div class="queue-item-artist">${s.artist}</div>
         </div>
         ${indicator}
+        <button class="queue-item-remove" title="Remove from queue">${Icons.general.close(12)}</button>
       `;
+      item.querySelector('.queue-item-remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.removeQueueItem(idx);
+      });
+      item.addEventListener('dragstart', (e) => {
+        this._dragQueueIdx = idx;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', String(idx)); } catch (err) {}
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        this._dragQueueIdx = null;
+      });
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        let from = this._dragQueueIdx;
+        if (from == null) {
+          const parsed = parseInt(e.dataTransfer.getData('text/plain'), 10);
+          from = Number.isInteger(parsed) ? parsed : null;
+        }
+        if (from != null && from !== idx) this.moveQueueItem(from, idx);
+      });
       list.appendChild(item);
+    });
+  }
+
+  moveQueueItem(from, to) {
+    const state = this.ui.state;
+    if (from < 0 || from >= state.queue.length || to < 0 || to >= state.queue.length) return;
+    const [moved] = state.queue.splice(from, 1);
+    state.queue.splice(to, 0, moved);
+    if (state.queueIndex === from) state.queueIndex = to;
+    else if (from < state.queueIndex && to >= state.queueIndex) state.queueIndex--;
+    else if (from > state.queueIndex && to <= state.queueIndex) state.queueIndex++;
+    this.renderQueueList();
+  }
+
+  removeQueueItem(idx) {
+    const state = this.ui.state;
+    if (idx < 0 || idx >= state.queue.length) return;
+    const wasCurrent = idx === state.queueIndex;
+    state.queue.splice(idx, 1);
+    if (wasCurrent) {
+      state.queueIndex = idx - 1;
+    } else if (idx < state.queueIndex) {
+      state.queueIndex--;
+    }
+    this.renderQueueList();
+    state.showToast('Removed from queue');
+  }
+
+  clearQueue() {
+    const state = this.ui.state;
+    const current = state.queue[state.queueIndex] || state.currentSong;
+    state.queue = current ? [current] : [];
+    state.queueIndex = current ? 0 : -1;
+    this.renderQueueList();
+    state.showToast('Queue cleared');
+  }
+
+  saveQueueAsPlaylist() {
+    const state = this.ui.state;
+    const remaining = state.queue.slice(Math.max(0, state.queueIndex + 1));
+    if (!remaining.length) {
+      state.showToast('No upcoming songs to save');
+      return;
+    }
+    state.modalOpen(`
+      <div data-modal="save-queue" class="saveQueue">
+        <div class="head">
+          <h2 class="title">Save Queue as Playlist</h2>
+          <button onclick="window.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="note">${remaining.length} upcoming song${remaining.length === 1 ? '' : 's'} will be saved.</p>
+        <input type="text" id="save-queue-playlist-name" placeholder="Playlist name" class="input">
+        <button id="save-queue-playlist-confirm" class="cta">
+          Save Playlist
+        </button>
+      </div>
+    `);
+    document.getElementById('save-queue-playlist-confirm')?.addEventListener('click', () => {
+      const name = document.getElementById('save-queue-playlist-name')?.value.trim();
+      if (!name) return;
+      state.playlists.push({
+        id: Utils.newId('pl'),
+        name,
+        description: '',
+        tags: [],
+        songs: remaining.map(s => Utils.id(s.id))
+      });
+      state.persist();
+      state.modalClose();
+      state.showToast(`Playlist "${name}" created`);
     });
   }
 
@@ -407,10 +570,12 @@ class PlayerManager {
 
   toggleShare() {
     const song = this.ui.state.currentSong;
+    if (!song) return;
+    const url = `${window.location.origin}/artist/${song.artistId}/album/${song.albumId}?song=${song.id}`;
     if (navigator.share) {
-      navigator.share({ title: song.title, text: `Listen to ${song.title} by ${song.artist}`, url: window.location.href }).catch(() => {});
+      navigator.share({ title: song.title, text: `Listen to ${song.title} by ${song.artist}`, url }).catch(() => {});
     } else {
-      navigator.clipboard?.writeText(`${song.title} - ${song.artist}`).then(() => this.ui.state.showToast('Copied to clipboard'));
+      navigator.clipboard?.writeText(url).then(() => this.ui.state.showToast('Link copied to clipboard'));
     }
   }
 
@@ -424,28 +589,120 @@ class PlayerManager {
   }
 
   toggleSleepTimer() {
+    this.openSleepMenu();
+  }
+
+  openSleepMenu() {
     const state = this.ui.state;
-    if (state.sleepTimerId) {
-      clearTimeout(state.sleepTimerId);
-      state.sleepTimerId = null;
-      document.getElementById('sleep-btn')?.classList.remove('active');
-      state.showToast('Sleep timer canceled');
-    } else {
-      document.getElementById('sleep-btn')?.classList.add('active');
-      state.showToast('Sleep timer: 15 min');
-      state.sleepTimerId = setTimeout(() => {
-        if (state.isPlaying) this.ui.audioPlayer.togglePlay();
-        state.showToast('Sleep timer ended');
-        state.sleepTimerId = null;
-        document.getElementById('sleep-btn')?.classList.remove('active');
-      }, 15 * 60 * 1000);
+    const minutes = [5, 15, 30, 45, 60];
+    const activeMin = state.sleepTimerEndsAt ? Math.round((state.sleepTimerEndsAt - Date.now()) / 60000) : null;
+    state.modalOpen(`
+      <div data-modal="sleep" class="sleep-menu">
+        <div class="head">
+          <h2 class="title">Sleep Timer</h2>
+          <button onclick="window.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div data-list="options" class="sleep-options">
+          ${minutes.map(m => `
+            <button class="sleep-option ${activeMin === m ? 'active' : ''}" data-sleep-min="${m}">
+              <span class="sleep-option-label">${m} minutes</span>
+            </button>
+          `).join('')}
+          <button class="sleep-option ${state.sleepTimerTrackEnd ? 'active' : ''}" data-sleep-track="1">
+            <span class="sleep-option-label">End of current track</span>
+          </button>
+          <button class="sleep-option sleep-option-off" data-sleep-off="1">
+            <span class="sleep-option-label">Off</span>
+          </button>
+        </div>
+      </div>
+    `);
+    document.querySelectorAll('#modal [data-sleep-min]').forEach(btn => {
+      btn.addEventListener('click', () => this.setSleepTimer(parseInt(btn.dataset.sleepMin, 10)));
+    });
+    document.querySelector('#modal [data-sleep-track]')?.addEventListener('click', () => this.setSleepTrackEnd());
+    document.querySelector('#modal [data-sleep-off]')?.addEventListener('click', () => {
+      this.clearSleepTimer();
+      state.modalClose();
+    });
+  }
+
+  setSleepTimer(minutes) {
+    const state = this.ui.state;
+    this.clearSleepTimer({ silent: true });
+    state.sleepTimerEndsAt = Date.now() + minutes * 60 * 1000;
+    state.sleepTimerId = setTimeout(() => this._fireSleepTimer(), minutes * 60 * 1000);
+    document.getElementById('sleep-btn')?.classList.add('active');
+    this._startSleepBadge();
+    state.modalClose();
+    state.showToast(`Sleep timer: ${minutes} min`);
+  }
+
+  setSleepTrackEnd() {
+    const state = this.ui.state;
+    this.clearSleepTimer({ silent: true });
+    state.sleepTimerTrackEnd = true;
+    document.getElementById('sleep-btn')?.classList.add('active');
+    this.updateSleepBadge();
+    state.modalClose();
+    state.showToast('Sleep timer: stops after the current track');
+  }
+
+  clearSleepTimer({ silent = false } = {}) {
+    const state = this.ui.state;
+    if (state.sleepTimerId) clearTimeout(state.sleepTimerId);
+    state.sleepTimerId = null;
+    state.sleepTimerEndsAt = null;
+    state.sleepTimerTrackEnd = false;
+    if (this._sleepBadgeTimer) {
+      clearInterval(this._sleepBadgeTimer);
+      this._sleepBadgeTimer = null;
     }
+    document.getElementById('sleep-btn')?.classList.remove('active');
+    this.updateSleepBadge();
+    if (!silent) state.showToast('Sleep timer off');
+  }
+
+  _fireSleepTimer() {
+    const state = this.ui.state;
+    state.sleepTimerId = null;
+    state.sleepTimerEndsAt = null;
+    if (state.isPlaying) this.ui.audioPlayer.togglePlay();
+    this.clearSleepTimer({ silent: true });
+    state.showToast('Sleep timer ended');
+  }
+
+  _startSleepBadge() {
+    if (this._sleepBadgeTimer) clearInterval(this._sleepBadgeTimer);
+    this.updateSleepBadge();
+    this._sleepBadgeTimer = setInterval(() => this.updateSleepBadge(), 1000);
+  }
+
+  updateSleepBadge() {
+    const btn = document.getElementById('sleep-btn');
+    if (!btn) return;
+    const state = this.ui.state;
+    let badge = btn.querySelector('.sleep-badge');
+    const remaining = state.sleepTimerEndsAt ? Math.max(0, state.sleepTimerEndsAt - Date.now()) : null;
+    if (remaining == null && !state.sleepTimerTrackEnd) {
+      badge?.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'sleep-badge';
+      btn.appendChild(badge);
+    }
+    badge.textContent = state.sleepTimerTrackEnd ? 'track' : Utils.formatTime(Math.ceil(remaining / 1000));
   }
 
   setupVisualizer() {
     const canvas = document.getElementById('visualizer');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
     let width, height;
     const resize = () => {
@@ -748,7 +1005,7 @@ class MediaSessionManager {
     if (lower.endsWith('.webp')) return 'image/webp';
     if (lower.endsWith('.gif')) return 'image/gif';
     if (lower.endsWith('.svg')) return 'image/svg+xml';
-    return 'image/png'; // default fallback
+    return 'image/png';
   }
 
   _setupActionHandlers() {

@@ -31,13 +31,7 @@
     'overlays/popOvers',
     'overlays/search',
     'overlays/toasts',
-    'overlays/toolTips',
-
-
-
-
-    
-    'unSorted'
+    'overlays/toolTips'
   ];
 
   const fragment = document.createDocumentFragment();

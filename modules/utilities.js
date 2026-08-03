@@ -3,8 +3,11 @@
  *
  * Contains:
  *   - CONFIG        — app-wide configuration constants
- *   - Utils         — general helper functions (slugify, clamp, shuffled, formatTime, id, newId)
+ *   - Utils         — general helpers (slugify, clamp, shuffled, formatTime, id, newId,
+ *                     escapeHtml, formatDuration, buildAlbumQueue)
+ *   - Prefs         — persisted user preferences (accent, fadeTransitions, radioAutoplay)
  *   - IdUtils       — ID normalization, HSL conversion, sampling
+ *   - Spinner       — reusable page/area/inline loading indicator
  *   - ColorExtractor — album art colour extraction and theme application
  *   - PersistenceManager — localStorage save/restore of player state
  */
@@ -21,12 +24,7 @@ const CONFIG = {
     favAlbums:  'Albums',
     playlists:  'Playlists'
   },
-  LOADING: {
-    minVisibleMs: 900,
-    extraDelayMs: 500,
-    settleMs:     400,
-    fillMs:       350
-  },
+  DEFAULT_COVER: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23666"/%3E%3C/svg%3E',
   QUEUE: {
     recentMax: 30
   },
@@ -58,57 +56,112 @@ const Utils = {
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   },
-  // Normalizes any incoming id (number/string/null) to a canonical string
-  // key so every lookup map uses a single consistent key type.
   id(val) {
     return val == null ? '' : String(val);
   },
-  // Generates a fresh, collision-resistant id for things the user creates
-  // at runtime (e.g. playlists). NEVER derived from a name.
   newId(prefix = 'id') {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return `${prefix}_${crypto.randomUUID()}`;
     }
     return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  },
+  escapeHtml(str = '') {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+  formatDuration(raw) {
+    if (raw === null || raw === undefined || raw === '') return '';
+    if (typeof raw === 'string') {
+      const text = raw.trim();
+      if (!text) return '';
+      if (text.includes(':') || /[a-zA-Z]/.test(text)) return text;
+      const parsed = Number(text);
+      if (!Number.isFinite(parsed)) return text;
+      return Utils.formatTime(parsed);
+    }
+    if (!Number.isFinite(raw) || raw <= 0) return String(raw);
+    return Utils.formatTime(raw);
+  },
+  buildAlbumQueue(state, artistId, albumId) {
+    const artist = state.getArtistById(artistId);
+    const album  = artist?.albums.find(a => Utils.id(a.id) === Utils.id(albumId));
+    if (!artist || !album) return [];
+    return album.songs.map(s => ({
+      ...s,
+      artistId: artist.id,
+      albumId: album.id,
+      artist: artist.artist,
+      album: album.album,
+      coverUrl: album.coverUrl,
+      artistImageUrl: artist.imageUrl
+    }));
   }
 };
 
+// ═══════════════ Prefs ═══════════════
+
+/* ============================================================================
+   Prefs — tiny persisted preferences store (mybeats.prefs.v1).
+   Loaded once, cached in memory, accent applied to :root before first render.
+   ============================================================================ */
+const Prefs = {
+  KEY: 'mybeats.prefs.v1',
+  DEFAULTS: {
+    accent: 'coral',
+    fadeTransitions: false,
+    radioAutoplay: false
+  },
+ACCENTS: {
+  coral:   { coral: '242 137 115', pink: '249 134 210', purple: '165 134 249' },
+  ruby:    { coral: '240  62 101', pink: '237  63 131', purple: '161  55 196' },
+  amber:   { coral: '244 167  56', pink: '245 122  44', purple: '147  51 195' },
+  emerald: { coral: ' 64 191 128', pink: ' 64 185 191', purple: ' 77 153 230' },
+  azure:   { coral: ' 77 184 245', pink: '114 151 247', purple: '163 106 244' },
+  violet:  { coral: '179 106 244', pink: '212  76 233', purple: '236  68 198' }
+},
+  _cache: null,
+  _load() {
+    if (this._cache) return this._cache;
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem(this.KEY)) || {};
+    } catch (e) {
+      stored = {};
+    }
+    this._cache = { ...this.DEFAULTS, ...stored };
+    return this._cache;
+  },
+  get(key) {
+    return this._load()[key];
+  },
+  set(key, val) {
+    this._load()[key] = val;
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(this._cache));
+    } catch (e) {}
+  },
+  applyAccent(name) {
+    const accent = this.ACCENTS[name] || this.ACCENTS[this.DEFAULTS.accent];
+    const root = document.documentElement;
+    root.style.setProperty('--accent-coral', accent.coral);
+    root.style.setProperty('--accent-pink', accent.pink);
+    root.style.setProperty('--accent-purple', accent.purple);
+  },
+  apply() {
+    this.applyAccent(this.get('accent'));
+  }
+};
+
+Prefs.apply();
+
 // ═══════════════ IdUtils ═══════════════
 class IdUtils {
-  static normalize(v) { return v == null ? '' : String(v); }
-  static hslToRgb(hslStr) {
-    const m = hslStr.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!m) return { r: 255, g: 107, b: 107 };
-    let h = parseInt(m[1]) / 360;
-    let s = parseInt(m[2]) / 100;
-    let l = parseInt(m[3]) / 100;
-    let r, g, b;
-    if (s === 0) {
-      r = g = b = l;
-    } else {
-      const hue2rgb = (p, q, t) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-      };
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-  }
+  static normalize(v) { return Utils.id(v); }
   static sample(arr, n) {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy.slice(0, n);
+    return Utils.shuffled(arr).slice(0, n);
   }
 }
 
@@ -117,9 +170,10 @@ class ColorExtractor {
   constructor(options = {}) {
     this.cache = new Map();
     this.defaultColors = {
-      primary:   '#1a1a2e',
-      secondary: '#16213e',
-      accent:    '#e94560'
+      // fallback RGB values – same dark theme as your earlier :root
+      primary:   '20 20 40',    // ≈ hsl(240, 28%, 18%) in RGB
+      secondary: '28 32 52',    // ≈ hsl(224, 48%, 20%)
+      accent:    '220 38 38'    // ≈ hsl(350, 70%, 50%)  (coral-ish)
     };
     this.opts = {
       sampleRate:       10,
@@ -148,18 +202,32 @@ class ColorExtractor {
 
   applyThemeToPlayer(colors) {
     const root = document.documentElement;
+
+    // Set the three main colours as space‑separated RGB triplets
     root.style.setProperty('--player-primary',   colors.primary);
     root.style.setProperty('--player-secondary', colors.secondary);
     root.style.setProperty('--player-accent',    colors.accent);
-    const gradient = `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`;
-    root.style.setProperty('--player-gradient', gradient);
-    root.style.setProperty('--player-glow', `${colors.accent}40`);
-    root.style.setProperty('--player-glow-strong', `${colors.accent}80`);
+
+    // The gradient now uses rgb(var(--player-…)) so it auto‑updates with the variables
+    root.style.setProperty('--player-gradient', 
+      `linear-gradient(135deg, rgb(var(--player-primary)), rgb(var(--player-secondary)))`);
+
+    // Pre‑computed glow values – you can either keep these or replace them in CSS with
+    //  rgba(var(--player-accent), 0.25) etc. – here we generate actual rgba() strings
+    root.style.setProperty('--player-glow',        this._toRGBA(colors.accent, 0.25));
+    root.style.setProperty('--player-glow-strong', this._toRGBA(colors.accent, 0.5));
+
+    // Darker tint (mixing with black) – now an RGB triplet as well
     root.style.setProperty('--player-tint', this._mixWithBlack(colors.primary, 0.65));
-    root.style.setProperty('--theme-transition', 'background 0.6s ease, color 0.35s ease, box-shadow 0.5s ease, border-color 0.4s ease');
+
+    // transition (unchanged)
+    root.style.setProperty('--theme-transition', 
+      'background 0.6s ease, color 0.35s ease, box-shadow 0.5s ease, border-color 0.4s ease');
+
     window.dispatchEvent(new CustomEvent('themechange', { detail: { ...colors } }));
   }
 
+  // ====================  PRIVATE HELPERS (unchanged logic, adapted output) ====================
   _loadImage(url) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -193,7 +261,9 @@ class ColorExtractor {
       const key = `${Math.floor(r / this.opts.colorQuantize)},${Math.floor(g / this.opts.colorQuantize)},${Math.floor(b / this.opts.colorQuantize)}`;
       colorMap.set(key, (colorMap.get(key) || 0) + 1);
     }
-    const sorted = [...colorMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, this.opts.dominantColorCount);
+    const sorted = [...colorMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, this.opts.dominantColorCount);
     const palette = sorted.map(([key]) => {
       const [r, g, b] = key.split(',').map(v => parseInt(v) * this.opts.colorQuantize);
       return { r, g, b };
@@ -203,18 +273,70 @@ class ColorExtractor {
 
   _buildScheme(palette) {
     if (!palette.length) return { ...this.defaultColors };
+
+    // Convert to HSL for easier scheme construction
     const hslPalette = palette.map(c => this._rgbToHsl(c));
-    const primary = { h: hslPalette[0].h, s: Math.min(hslPalette[0].s, 40), l: Math.max(hslPalette[0].l, 80) };
-    const secondary = { h: hslPalette[0].h, s: Math.min(hslPalette[0].s, 30), l: Math.min(hslPalette[0].l, 70) };
+
+    // Primary: use the most frequent colour, low saturation, medium lightness (≈ background)
+    const primaryHSL = {
+      h: hslPalette[0].h,
+      s: Math.min(hslPalette[0].s, 40),
+      l: Math.max(hslPalette[0].l, 80)
+    };
+
+    // Secondary: slightly darker
+    const secondaryHSL = {
+      h: hslPalette[0].h,
+      s: Math.min(hslPalette[0].s, 30),
+      l: Math.min(hslPalette[0].l, 70)
+    };
+
+    // Accent: the most vibrant colour, pushed toward full saturation
     const vibrant = hslPalette.reduce((a, b) => (a.s > b.s ? a : b));
-    const accent = { h: vibrant.h, s: Math.min(vibrant.s + 20, 100), l: Utils.clamp(vibrant.l, 45, 55) };
+    const accentHSL = {
+      h: vibrant.h,
+      s: Math.min(vibrant.s + 20, 100),
+      l: Math.round((45 + 55) / 2)  // clamp to 45-55, roughly
+    };
+
+    // Convert back to RGB and format as "R G B"
     return {
-      primary:   `hsl(${primary.h}, ${primary.s}%, ${primary.l}%)`,
-      secondary: `hsl(${secondary.h}, ${secondary.s}%, ${secondary.l}%)`,
-      accent:    `hsl(${accent.h}, ${accent.s}%, ${accent.l}%)`
+      primary:   this._hslToRGBString(primaryHSL),
+      secondary: this._hslToRGBString(secondaryHSL),
+      accent:    this._hslToRGBString(accentHSL)
     };
   }
 
+  // ============  Conversion utilities (added / modified) ============
+  /** HSL object → space‑separated RGB string (e.g. "30 33 36") */
+  _hslToRGBString({ h, s, l }) {
+    const rgb = this._hslToRgb(h, s, l);
+    return `${rgb.r} ${rgb.g} ${rgb.b}`;
+  }
+
+  /** Standard HSL to RGB conversion (returns {r,g,b} 0-255) */
+  _hslToRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s /= 100;
+    l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r, g, b;
+    if (h < 60)      [r, g, b] = [c, x, 0];
+    else if (h < 120) [r, g, b] = [x, c, 0];
+    else if (h < 180) [r, g, b] = [0, c, x];
+    else if (h < 240) [r, g, b] = [0, x, c];
+    else if (h < 300) [r, g, b] = [x, 0, c];
+    else              [r, g, b] = [c, 0, x];
+    return {
+      r: Math.round((r + m) * 255),
+      g: Math.round((g + m) * 255),
+      b: Math.round((b + m) * 255)
+    };
+  }
+
+  /** RGB → HSL object (used for palette analysis) */
   _rgbToHsl({ r, g, b }) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -231,14 +353,20 @@ class ColorExtractor {
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
   }
 
-  _mixWithBlack(color, ratio) {
-    const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!match) return color;
-    const [, h, s, l] = match.map(Number);
-    return `hsl(${h}, ${s}%, ${Math.round(l * (1 - ratio))}%)`;
+  /** Mix an RGB colour with black (darken). Expects "R G B" string, returns "R G B" */
+  _mixWithBlack(rgbString, ratio) {
+    const [r, g, b] = rgbString.split(' ').map(Number);
+    if (isNaN(r)) return rgbString;
+    return `${Math.round(r * (1 - ratio))} ${Math.round(g * (1 - ratio))} ${Math.round(b * (1 - ratio))}`;
+  }
+
+  /** Convert RGB string to an rgba() string (for glow effects) */
+  _toRGBA(rgbString, alpha) {
+    const [r, g, b] = rgbString.split(' ').map(Number);
+    if (isNaN(r)) return `rgba(0,0,0,${alpha})`;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 }
-
 // ═══════════════ PersistenceManager ═══════════════
 /**
  * persistence.js — restores playback state on page load, saves on changes.
@@ -470,3 +598,168 @@ class ColorExtractor {
   }
   initPersistence();
 })();
+
+// ═══════════════ Spinner ═══════════════
+
+/* ============================================================================
+   Spinner — reusable loading indicator (page overlay / area overlay / inline).
+   Shared CSS is injected once, regardless of how many instances are created.
+   ============================================================================ */
+class Spinner {
+  static #CSS_INJECTED = false;
+
+  static #injectStyles() {
+    if (Spinner.#CSS_INJECTED) return;
+    const style = document.createElement('style');
+    style.id = 'spnr-styles';
+    style.textContent = `
+      @keyframes spnr-spin {
+        to { transform: rotate(360deg); }
+      }
+      .spnr-circle {
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 0.25rem solid rgba(255, 255, 255, 0.2);
+        border-top-color: #dc143c;
+        border-radius: 9999px;
+        animation: spnr-spin 0.75s linear infinite;
+      }
+      .spnr-overlay {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 10000;
+        transition: opacity 0.3s ease;
+      }
+      .spnr-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .spnr-overlay.hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .spnr-overlay--page {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+      .spnr-overlay--area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+      }
+      .spnr-inline {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.25s ease;
+        pointer-events: none;
+      }
+      .spnr-inline .spnr-circle {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-width: 0.18rem;
+      }
+      .spnr-inline.show {
+        opacity: 1;
+      }
+      .spnr-inline.hide {
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    Spinner.#CSS_INJECTED = true;
+  }
+
+  constructor({ type = 'page', container } = {}) {
+    Spinner.#injectStyles();
+    this.type = type;
+    this.container = container || document.body;
+    this.el = null;
+    this.#build();
+  }
+
+  #build() {
+    if (this.type === 'page' || this.type === 'area') {
+      this.#buildOverlay();
+    } else if (this.type === 'inline') {
+      this.#buildInline();
+    } else {
+      throw new Error(`Unknown spinner type: ${this.type}`);
+    }
+    this.el.classList.add('hide');
+  }
+
+  #buildOverlay() {
+    const overlay = document.createElement('div');
+    overlay.classList.add('spnr-overlay');
+    overlay.classList.add(this.type === 'page' ? 'spnr-overlay--page' : 'spnr-overlay--area');
+
+    const circle = document.createElement('div');
+    circle.classList.add('spnr-circle');
+    overlay.appendChild(circle);
+
+    if (this.type === 'page') {
+      document.body.appendChild(overlay);
+    } else {
+      if (!this.container) {
+        throw new Error('"area" spinner requires a container element.');
+      }
+      if (window.getComputedStyle(this.container).position === 'static') {
+        this.container.style.position = 'relative';
+      }
+      this.container.appendChild(overlay);
+    }
+    this.el = overlay;
+  }
+
+  #buildInline() {
+    if (!this.container) {
+      throw new Error('"inline" spinner requires a container element.');
+    }
+    if (window.getComputedStyle(this.container).position === 'static') {
+      this.container.style.position = 'relative';
+    }
+    const inline = document.createElement('span');
+    inline.classList.add('spnr-inline');
+    const circle = document.createElement('div');
+    circle.classList.add('spnr-circle');
+    inline.appendChild(circle);
+    this.container.appendChild(inline);
+    this.el = inline;
+  }
+
+  show() {
+    if (!this.el) return;
+    this.el.classList.remove('hide');
+    this.el.classList.add('show');
+    this.container?.setAttribute?.('aria-busy', 'true');
+  }
+
+  hide() {
+    if (!this.el) return;
+    this.el.classList.remove('show');
+    this.el.classList.add('hide');
+    this.container?.removeAttribute?.('aria-busy');
+  }
+
+  remove() {
+    if (this.el) {
+      this.el.remove();
+      this.el = null;
+    }
+  }
+}

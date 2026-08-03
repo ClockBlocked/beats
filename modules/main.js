@@ -8,6 +8,12 @@
  *        Previous code had duplicate constructors here; keep it lean.
  */
 
+
+
+
+if (typeof ColorExtractor === 'undefined') {
+  console.error('ColorExtractor is undefined. Check utilities.js for errors.');
+}
 // 1. Colour extraction (must exist before first playSong call)
 window.colorExtractor = new ColorExtractor();
 
@@ -15,9 +21,18 @@ window.colorExtractor = new ColorExtractor();
 window.state       = new PlayerState();
 window.audioPlayer = new AudioEngine(window.state);
 
+// 2b. Persisted preferences (accent applied again now that the DOM is ready)
+Prefs.apply();
+
 // 3. UI layer
 window.favoritesPlaylists = new FavoritesPlaylists(window.state);
-window.uiManager          = new UIManager(window.state, window.audioPlayer, window.favoritesPlaylists);
+window.uiManager = new UIManager(window.state, window.audioPlayer, window.favoritesPlaylists);
+
+// In main.js (or wherever window.uiManager is created)
+window.saveDrawer = window.saveToLibraryDrawer || createSaveDrawer(window.uiManager);
+
+// 3b. Offline caching manager (service worker bridge for per-song caching)
+window.offlineCache = new OfflineCacheManager(window.state);
 
 // 4. Global helpers exposed for inline HTML onclick handlers
 window.closeModal          = () => window.state.modalClose();
@@ -30,8 +45,3 @@ window.toggleFavAndReRender = (id) => window.uiManager.toggleFavAndReRender(id);
 // 5. Media Session bridge
 window.mediaSessionManager = new MediaSessionManager(window.state, window.audioPlayer);
 window.audioPlayer.setMediaSessionManager(window.mediaSessionManager);
-
-// 6. Dismiss the initial loading screen — the app is now interactive.
-if (typeof window.hideInitialLoader === 'function') {
-  window.hideInitialLoader();
-}
