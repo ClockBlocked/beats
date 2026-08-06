@@ -221,7 +221,7 @@ class Router {
     const container = document.getElementById('breadcrumb-items');
     if (!container) return;
     const crumbs = this.getBreadcrumbs();
-    const existingItems = container.querySelectorAll('.breadcrumb-item, .breadcrumb-sep');
+    const existingItems = container.querySelectorAll('.item, .sep');
     existingItems.forEach(el => {
       el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
       el.style.opacity = '0.35';
@@ -229,21 +229,21 @@ class Router {
     });
     setTimeout(() => {
       if (!crumbs.length) {
-        container.innerHTML = '<span class="breadcrumb-item active" style="color: rgba(var(--text-secondary));">Home</span>';
+        container.innerHTML = '<span class="item active" style="color: rgba(var(--text-secondary));">Home</span>';
       } else {
         container.innerHTML = crumbs.map((crumb, i) => {
           const isLast = i === crumbs.length - 1;
           return `
-            <span class="breadcrumb-item ${isLast ? 'active' : ''}"
+            <span class="item ${isLast ? 'active' : ''}"
                   style="opacity: 0; transform: translateX(8px); transition: opacity 0.45s ease ${i * 0.08}s, transform 0.3s ease ${i * 0.08}s; color: rgba(var(--text-secondary));">
               ${crumb}
             </span>
-            ${!isLast ? `<span class="breadcrumb-sep" style="opacity: 0; transition: opacity 0.3s ease ${i * 0.08 + 0.04}s; color: rgba(var(--text-tertiary));">&#8250;</span>` : ''}
+            ${!isLast ? `<span class="sep" style="opacity: 0; transition: opacity 0.3s ease ${i * 0.08 + 0.04}s; color: rgba(var(--text-tertiary));">&#8250;</span>` : ''}
           `;
         }).join('');
       }
       requestAnimationFrame(() => {
-        container.querySelectorAll('.breadcrumb-item, .breadcrumb-sep').forEach(el => {
+        container.querySelectorAll('.item, .sep').forEach(el => {
           el.style.opacity = '1';
           el.style.transition = 'opacity 0.45s ease-in, transform 0.45s ease-in';
           el.style.transform = 'translateX(0)';
@@ -441,13 +441,8 @@ class AppListeners {
         immediate: () => {
           const saved = localStorage.getItem('theme') || 'dark';
           const btns = document.querySelectorAll('.theme-toggle-btn');
-          if (saved === 'light') {
-            document.body.classList.remove('dark');
-            btns.forEach(b => b.classList.remove('dark'));
-          } else {
-            document.body.classList.add('dark');
-            btns.forEach(b => b.classList.add('dark'));
-          }
+          document.documentElement.setAttribute('data-theme', saved);
+          btns.forEach(b => b.classList.toggle('dark', saved === 'dark'));
         }
       }
     ];
@@ -549,55 +544,54 @@ class ContentEventManager {
   }
 
   showArtistPopover(artistId, event) {
-    document.querySelector('.artist-popover')?.remove();
+    document.querySelector('[data-popover="artist"]')?.remove();
     const state = this.ui.state;
     const artist = state.getArtistById(artistId);
     if (!artist) return;
     const popover = document.createElement('div');
-    popover.className = 'artist-popover animate-popoverReveal';
     popover.setAttribute('data-popover', 'artist');
     popover.innerHTML = `
-      <div class="popover-gradient-border"></div>
-      <div class="popover-content">
-        <div class="popover-header">
-          <div class="popover-avatar-wrapper">
-            <img src="${artist.imageUrl}" class="popover-avatar" alt="${artist.artist}">
-            <div class="popover-avatar-glow"></div>
+      <div class="border"></div>
+      <div class="content">
+        <div class="head">
+          <div class="avatar">
+            <img src="${artist.imageUrl}" class="img" alt="${artist.artist}">
+            <div class="glow"></div>
           </div>
-          <div class="popover-title-section">
-            <h3 class="popover-artist-name">${artist.artist}</h3>
-            <span class="popover-genre-badge">${artist.genre || 'Artist'}</span>
-          </div>
-        </div>
-        <div class="popover-stats">
-          <div class="popover-stat">
-            <span class="popover-stat-value">${artist.albums?.length || 0}</span>
-            <span class="popover-stat-label">Albums</span>
-          </div>
-          <div class="popover-stat-divider"></div>
-          <div class="popover-stat">
-            <span class="popover-stat-value">${artist.monthlyListeners || '24.5K'}</span>
-            <span class="popover-stat-label">Listeners</span>
-          </div>
-          <div class="popover-stat-divider"></div>
-          <div class="popover-stat">
-            <span class="popover-stat-value">${artist.topSong?.plays || '12.3K'}</span>
-            <span class="popover-stat-label">Plays</span>
+          <div class="heading">
+            <h3 class="name">${artist.artist}</h3>
+            <span class="genre">${artist.genre || 'Artist'}</span>
           </div>
         </div>
-        <div class="popover-actions">
-          <button class="popover-btn popover-btn-primary" data-artist-id="${artist.id}" data-action="go-artist">
-            <svg class="popover-btn-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5L16.5 8L10 3.5L3.5 8L10 12.5Z M3.5 12L10 16.5L16.5 12"/></svg>
+        <div class="stats">
+          <div class="stat">
+            <span class="value">${artist.albums?.length || 0}</span>
+            <span class="label">Albums</span>
+          </div>
+          <div class="divider"></div>
+          <div class="stat">
+            <span class="value">${artist.monthlyListeners || '24.5K'}</span>
+            <span class="label">Listeners</span>
+          </div>
+          <div class="divider"></div>
+          <div class="stat">
+            <span class="value">${artist.topSong?.plays || '12.3K'}</span>
+            <span class="label">Plays</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-artist-id="${artist.id}" data-action="go-artist">
+            <svg class="icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5L16.5 8L10 3.5L3.5 8L10 12.5Z M3.5 12L10 16.5L16.5 12"/></svg>
             <span>View Profile</span>
           </button>
-          <button class="popover-btn popover-btn-secondary" data-artist-id="${artist.id}" data-action="play-top">
-            <svg class="popover-btn-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M6 3L16 10L6 17V3Z"/></svg>
+          <button class="btn" data-artist-id="${artist.id}" data-action="play-top">
+            <svg class="icon" viewBox="0 0 20 20" fill="currentColor"><path d="M6 3L16 10L6 17V3Z"/></svg>
             <span>Play Top Hit</span>
           </button>
         </div>
-        <div class="popover-footer">
-          <div class="popover-waveform"><span></span><span></span><span></span><span></span><span></span></div>
-          <span class="popover-tip">Click outside to close</span>
+        <div class="foot">
+          <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+          <span class="tip">Click outside to close</span>
         </div>
       </div>
     `;
@@ -635,61 +629,60 @@ class ContentEventManager {
   }
 
   showSongMenu(songId, event) {
-    document.querySelector('.song-context-menu')?.remove();
+    document.querySelector('[data-menu="song"]')?.remove();
     const state = this.ui.state;
     const song = state.getSongById(songId);
     if (!song) return;
     const isFav = this.ui.favorites.isSongFavorite(songId);
     const isCached = window.offlineCache?.isCached(song) || false;
     const menu = document.createElement('div');
-    menu.className = 'song-context-menu';
     menu.setAttribute('data-menu', 'song');
     menu.style.left = event.clientX + 'px';
     menu.style.top = event.clientY + 'px';
     menu.innerHTML = `
-      <div class="context-menu-header">
-        <span class="context-menu-song-title">${song.title}</span>
-        <span class="context-menu-song-artist">${song.artist || ''}</span>
+      <div class="head">
+        <span class="title">${song.title}</span>
+        <span class="sub">${song.artist || ''}</span>
       </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-group">
-        <button class="context-menu-item" data-action="add-fav">
-          <span class="context-menu-icon">
+      <div class="divider"></div>
+      <div class="group">
+        <button class="item" data-action="add-fav">
+          <span class="icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           </span>
-          <span class="context-menu-label">${isFav ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+          <span>${isFav ? 'Remove from Favorites' : 'Add to Favorites'}</span>
         </button>
-        <button class="context-menu-item" data-action="add-playlist">
-          <span class="context-menu-icon">
+        <button class="item" data-action="add-playlist">
+          <span class="icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </span>
-          <span class="context-menu-label">Add to Playlist</span>
+          <span>Add to Playlist</span>
         </button>
       </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-group">
-        <button class="context-menu-item" data-action="copy-link">
-          <span class="context-menu-icon">${Icons.general.link(16)}</span>
-          <span class="context-menu-label">Copy link</span>
+      <div class="divider"></div>
+      <div class="group">
+        <button class="item" data-action="copy-link">
+          <span class="icon">${Icons.general.link(16)}</span>
+          <span>Copy link</span>
         </button>
-        <button class="context-menu-item" data-action="offline-toggle">
-          <span class="context-menu-icon">${Icons.general.checkBadge(16)}</span>
-          <span class="context-menu-label">${isCached ? 'Remove offline copy' : 'Cache for offline'}</span>
+        <button class="item" data-action="offline-toggle">
+          <span class="icon">${Icons.general.checkBadge(16)}</span>
+          <span>${isCached ? 'Remove offline copy' : 'Cache for offline'}</span>
         </button>
       </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-group">
-        <button class="context-menu-item" data-action="view-artist" data-artist-id="${song.artistId}">
-          <span class="context-menu-icon">
+      <div class="divider"></div>
+      <div class="group">
+        <button class="item" data-action="view-artist" data-artist-id="${song.artistId}">
+          <span class="icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.3 18.3C6.8 16.5 9.2 15 12 15s5.2 1.5 6.7 3.3"/></svg>
           </span>
-          <span class="context-menu-label">View Artist</span>
+          <span>View Artist</span>
         </button>
-        <button class="context-menu-item" data-action="view-album" data-artist-id="${song.artistId}" data-album-id="${song.albumId}">
-          <span class="context-menu-icon">
+        <button class="item" data-action="view-album" data-artist-id="${song.artistId}" data-album-id="${song.albumId}">
+          <span class="icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
           </span>
-          <span class="context-menu-label">View Album</span>
+          <span>View Album</span>
         </button>
       </div>
     `;
@@ -705,7 +698,7 @@ class ContentEventManager {
     setTimeout(() => window.addEventListener('click', closeMenu, { once: true }), 0);
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
-      const action = e.target.closest('.context-menu-item')?.dataset.action;
+      const action = e.target.closest('.item')?.dataset.action;
       if (!action) return;
       if (action === 'add-fav') this.ui.favorites.toggleFavoriteSong(song);
       if (action === 'add-playlist') window.favoritesPlaylists.addToPlaylistModal(song);
@@ -1121,12 +1114,11 @@ class SearchManager {
     if (!container) {
       container = document.createElement('div');
       container.id = 'search-results-container';
-      container.className = 'searchResultsContainer';
       container.setAttribute('data-search', 'results');
       const searchBar = document.getElementById('search-bar');
       if (searchBar) searchBar.appendChild(container);
     }
-    container.innerHTML = `<div class="searchLoading"><div class="spinner"></div></div>`;
+    container.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
     container.classList.remove('hidden');
     this.loadingStart = Date.now();
     clearTimeout(this.loadingTimeout);
@@ -1153,27 +1145,27 @@ class SearchManager {
       if (alb.album.toLowerCase().includes(lower)) albums.push({ artistId: a.id, albumId: alb.id, artistName: a.artist, albumName: alb.album, coverUrl: alb.coverUrl });
     }));
     if (!songs.length && !artists.length && !albums.length) {
-      return `<div class="emptyMessage">No results for "${state.searchQuery}"</div>`;
+      return `<div class="empty">No results for "${state.searchQuery}"</div>`;
     }
     const categoryBlock = (key, label, inner) => `
-      <div class="searchCategory" data-category="${key}">
-        <div class="searchCategoryHeader" data-category="${key}">
+      <div class="category" data-category="${key}">
+        <div class="head" data-category="${key}">
           <span>${label}</span>
           ${Icons.general.chevronDown()}
         </div>
-        <div class="searchCategoryContent" data-category="${key}">${inner}</div>
+        <div class="content" data-category="${key}">${inner}</div>
       </div>
     `;
     let html = '';
     if (artists.length) {
       html += categoryBlock('artists', `Artists (${artists.length})`, `
-        <div class="resultListFlex">
+        <div class="list">
           ${artists.map(a => `
-            <button class="resultButton" data-artist-id="${a.id}">
-              <img src="${a.imageUrl}" class="artistThumb" alt="">
-              <div class="textLeft">
-                <p class="resultTitle">${a.artist}</p>
-                <p class="resultSubtext">${a.genre || 'Artist'}</p>
+            <button class="result" data-artist-id="${a.id}">
+              <img src="${a.imageUrl}" class="avatar" alt="">
+              <div class="left">
+                <p class="title">${a.artist}</p>
+                <p class="sub">${a.genre || 'Artist'}</p>
               </div>
             </button>
           `).join('')}
@@ -1182,13 +1174,13 @@ class SearchManager {
     }
     if (albums.length) {
       html += categoryBlock('albums', `Albums (${albums.length})`, `
-        <div class="resultListFlex">
+        <div class="list">
           ${albums.map(alb => `
-            <button class="resultButton" data-artist-id="${alb.artistId}" data-album-id="${alb.albumId}">
-              <img src="${alb.coverUrl}" class="albumThumb" alt="">
-              <div class="textLeft">
-                <p class="resultTitle">${alb.albumName}</p>
-                <p class="resultSubtext">${alb.artistName}</p>
+            <button class="result" data-artist-id="${alb.artistId}" data-album-id="${alb.albumId}">
+              <img src="${alb.coverUrl}" class="cover" alt="">
+              <div class="left">
+                <p class="title">${alb.albumName}</p>
+                <p class="sub">${alb.artistName}</p>
               </div>
             </button>
           `).join('')}
@@ -1199,11 +1191,11 @@ class SearchManager {
       html += categoryBlock('songs', `Songs (${songs.length})`, `
         <div>
           ${songs.map((s, i) => `
-            <div class="songRow" role="button" tabindex="0" data-song-id="${s.id}" data-play-source="search" style="animation-delay:${i * 35}ms">
-              <img src="${s.coverUrl}" class="songThumb" alt="">
-              <div class="songInfo">
-                <p class="songTitle">${s.title}</p>
-                <p class="songSubtext">${s.artist} • ${s.album}</p>
+            <div class="song" role="button" tabindex="0" data-song-id="${s.id}" data-play-source="search" style="animation-delay:${i * 35}ms">
+              <img src="${s.coverUrl}" class="thumb" alt="">
+              <div class="info">
+                <p class="title">${s.title}</p>
+                <p class="sub">${s.artist} • ${s.album}</p>
               </div>
               <button class="downloadBtn" data-action="download-song" data-song-id="${s.id}" data-song-title="${s.title}" data-song-thumbnail="${s.coverUrl}" title="Download">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
@@ -1212,7 +1204,7 @@ class SearchManager {
                   <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
               </button>
-              <span class="durationText">${s.duration}</span>
+              <span class="time">${s.duration}</span>
             </div>
           `).join('')}
         </div>
@@ -1222,10 +1214,10 @@ class SearchManager {
   }
 
   attachCategoryCollapse() {
-    document.querySelectorAll('.searchCategoryHeader').forEach(header => {
+    document.querySelectorAll('.head[data-category]').forEach(header => {
       header.addEventListener('click', () => {
         const cat = header.dataset.category;
-        document.querySelector(`.searchCategoryContent[data-category="${cat}"]`)?.classList.toggle('collapsed');
+        document.querySelector(`.content[data-category="${cat}"]`)?.classList.toggle('collapsed');
         header.classList.toggle('collapsed');
       });
     });
@@ -1233,7 +1225,7 @@ class SearchManager {
 
   attachResultEvents() {
     document.querySelectorAll('[data-artist-id]').forEach(el => {
-      if (el.closest('.searchResultsContainer')) {
+      if (el.closest('[data-search="results"]')) {
         el.addEventListener('click', () => { this.ui.navigate('artist', el.dataset.artistId); this.closeSearch(); });
       }
     });

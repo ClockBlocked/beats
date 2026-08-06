@@ -296,7 +296,7 @@ class ColorExtractor {
     const accentHSL = {
       h: vibrant.h,
       s: Math.min(vibrant.s + 20, 100),
-      l: Math.round((45 + 55) / 2)  // clamp to 45-55, roughly
+      l: Math.max(45, Math.min(55, vibrant.l))
     };
 
     // Convert back to RGB and format as "R G B"

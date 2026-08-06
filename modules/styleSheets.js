@@ -11,6 +11,7 @@
     'base/icons',
     'base/images',
     'base/lists',
+    'base/progress',
     'base/youTube',
     
     'navbars/top',

@@ -3,7 +3,6 @@ class FavoritesPlaylists {
     this.state = state;
   }
 
-  // ==================== FAVORITES (all ID‑based) ====================
 
   isSongFavorite(id) {
     return this.state.favoriteSongs.some(sid => String(sid) === String(id));
@@ -57,37 +56,38 @@ class FavoritesPlaylists {
     if (this.state.isDrawerOpen) window.uiManager?.updateFullPlayer();
   }
 
-  // ==================== PLAYLISTS ====================
 
   openPlaylistModal() {
     const content = `
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold">Your Playlists</h2>
-        <button onclick="window.favoritesPlaylists.closeModal()" class="p-2 rounded-full hover:bg-interactive">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      <div data-modal="playlists" class="playlists">
+        <div class="head">
+          <h2 class="title">Your Playlists</h2>
+          <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div data-list="playlists" class="rows">
+          ${this.state.playlists.map(pl => `
+            <div class="row">
+              <div class="info">
+                <p class="name">${Utils.escapeHtml(pl.name)}</p>
+                <p class="count">${pl.songs.length} songs</p>
+              </div>
+              <div class="actions">
+                <button onclick="window.favoritesPlaylists.renamePlaylist('${pl.id}')" class="edit">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button onclick="window.favoritesPlaylists.deletePlaylist('${pl.id}')" class="delete">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          `).join('') || '<p class="empty">No playlists yet</p>'}
+        </div>
+        <button onclick="window.favoritesPlaylists.createNewPlaylist()" class="cta">
+          + Create New Playlist
         </button>
       </div>
-      <div class="space-y-2 mb-4">
-        ${this.state.playlists.map(pl => `
-          <div class="flex items-center justify-between p-3 rounded-lg" style="background: hsl(var(--bg-elevated));">
-            <div>
-              <p class="font-semibold">${pl.name}</p>
-              <p class="text-xs" style="color: hsl(var(--text-secondary));">${pl.songs.length} songs</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="window.favoritesPlaylists.renamePlaylist('${pl.id}')" class="p-2 rounded-full hover:bg-interactive">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button onclick="window.favoritesPlaylists.deletePlaylist('${pl.id}')" class="p-2 rounded-full hover:bg-red-500/20" style="color: hsl(var(--destructive));">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-          </div>
-        `).join('') || '<p class="text-center py-4" style="color: hsl(var(--text-secondary));">No playlists yet</p>'}
-      </div>
-      <button onclick="window.favoritesPlaylists.createNewPlaylist()" class="w-full py-3 rounded-xl font-semibold" style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;">
-        + Create New Playlist
-      </button>
     `;
     this.state.modalOpen(content);
   }
@@ -96,16 +96,18 @@ class FavoritesPlaylists {
 
   createNewPlaylist() {
     const content = `
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold">Create Playlist</h2>
-        <button onclick="window.favoritesPlaylists.closeModal()" class="p-2 rounded-full hover:bg-interactive">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      <div data-modal="create-playlist" class="create">
+        <div class="head">
+          <h2 class="title">Create Playlist</h2>
+          <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <input type="text" id="new-playlist-name" placeholder="Playlist name" class="input">
+        <button onclick="window.favoritesPlaylists.createPlaylistFromModal()" class="cta">
+          Create
         </button>
       </div>
-      <input type="text" id="new-playlist-name" placeholder="Playlist name" class="w-full p-3 rounded-lg mb-4" style="background: hsl(var(--bg-elevated));">
-      <button onclick="window.favoritesPlaylists.createPlaylistFromModal()" class="w-full py-3 rounded-xl font-semibold" style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;">
-        Create
-      </button>
     `;
     this.state.modalOpen(content);
   }
@@ -114,7 +116,7 @@ class FavoritesPlaylists {
     const name = document.getElementById('new-playlist-name')?.value.trim();
     if (!name) return;
     const newPlaylist = {
-      id: 'pl' + Date.now(),
+      id: Utils.newId('pl'),
       name: name,
       description: '',
       tags: [],
@@ -127,7 +129,72 @@ class FavoritesPlaylists {
     window.uiManager?.render();
   }
 
-  // Add a song (by ID) to a playlist
+  renamePlaylist(id) {
+    const pl = this.state.playlists.find(p => p.id === id);
+    if (!pl) return;
+    const content = `
+      <div data-modal="rename-playlist" class="rename">
+        <div class="head">
+          <h2 class="title">Rename Playlist</h2>
+          <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <input type="text" id="rename-playlist-name" value="${String(pl.name).replace(/"/g, '&quot;')}" placeholder="Playlist name" class="input">
+        <button onclick="window.favoritesPlaylists.confirmRenamePlaylist('${pl.id}')" class="cta">
+          Rename
+        </button>
+      </div>
+    `;
+    this.state.modalOpen(content);
+  }
+
+  confirmRenamePlaylist(id) {
+    const pl = this.state.playlists.find(p => p.id === id);
+    const name = document.getElementById('rename-playlist-name')?.value.trim();
+    if (!pl || !name) return;
+    pl.name = name;
+    this.state.persist();
+    this.state.modalClose();
+    this.state.showToast(`Playlist renamed to "${name}"`);
+    window.uiManager?.render();
+  }
+
+  deletePlaylist(id) {
+    const pl = this.state.playlists.find(p => p.id === id);
+    if (!pl) return;
+    const content = `
+      <div data-modal="delete-playlist" class="delete">
+        <div class="head">
+          <h2 class="title">Delete Playlist</h2>
+          <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="note">Delete "${Utils.escapeHtml(pl.name)}"? This cannot be undone.</p>
+        <div class="actions">
+          <button onclick="window.favoritesPlaylists.closeModal()" class="cancel">
+            Cancel
+          </button>
+          <button onclick="window.favoritesPlaylists.confirmDeletePlaylist('${pl.id}')" class="confirm">
+            Delete
+          </button>
+        </div>
+      </div>
+    `;
+    this.state.modalOpen(content);
+  }
+
+  confirmDeletePlaylist(id) {
+    const pl = this.state.playlists.find(p => p.id === id);
+    if (!pl) return;
+    this.state.playlists = this.state.playlists.filter(p => p.id !== id);
+    this.state.persist();
+    this.state.modalClose();
+    this.state.showToast(`Playlist "${pl.name}" deleted`);
+    window.uiManager?.render();
+  }
+
   addSongToPlaylist(plId, songId) {
     const pl = this.state.playlists.find(p => p.id === plId);
     const sid = String(songId);
@@ -142,61 +209,62 @@ class FavoritesPlaylists {
   addToPlaylistModal(song) {
     if (!this.state.playlists.length) {
       this.state.modalOpen(`
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold">Add to Playlist</h2>
-          <button onclick="window.favoritesPlaylists.closeModal()" class="p-2 rounded-full hover:bg-interactive">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        <div data-modal="add-to-playlist" class="add">
+          <div class="head">
+            <h2 class="title">Add to Playlist</h2>
+            <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <p class="empty">No playlists yet.</p>
+          <button onclick="window.favoritesPlaylists.closeModal(); document.getElementById('create-playlist-btn')?.click();"
+                  class="cta">
+            Create New Playlist
           </button>
         </div>
-        <p class="text-center py-4" style="color: hsl(var(--text-secondary));">No playlists yet.</p>
-        <button onclick="window.favoritesPlaylists.closeModal(); document.getElementById('create-playlist-btn')?.click();"
-                class="w-full py-3 rounded-xl font-semibold mt-2"
-                style="background: linear-gradient(135deg, hsl(var(--accent-coral)), hsl(var(--accent-pink))); color: white;">
-          Create New Playlist
-        </button>
       `);
       return;
     }
 
     const songContext = song
-      ? `<div class="flex items-center gap-3 mb-4 p-3 rounded-lg" style="background: hsl(var(--bg-interactive));">
-           <img src="${song.coverUrl}" class="w-10 h-10 rounded-md object-cover">
-           <div class="min-w-0">
-             <p class="font-semibold text-sm truncate">${song.title}</p>
-             <p class="text-xs truncate" style="color: hsl(var(--text-secondary));">${song.artist}</p>
+      ? `<div class="context">
+           <img src="${song.coverUrl}" class="cover">
+           <div class="info">
+             <p class="title">${song.title}</p>
+             <p class="sub">${song.artist}</p>
            </div>
          </div>`
       : '';
 
     const list = this.state.playlists.map(pl => `
-      <button class="w-full text-left px-4 py-3 rounded-lg hover:bg-interactive transition-colors flex items-center gap-3 mb-1"
+      <button class="pick"
               onclick="window.favoritesPlaylists.addSongToPlaylist('${pl.id}', '${song?.id || ''}')">
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-             style="background: linear-gradient(135deg, hsl(var(--accent-coral) / 0.2), hsl(var(--accent-pink) / 0.15));">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: hsl(var(--accent-coral));">
+        <div class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
           </svg>
         </div>
-        <div class="min-w-0 flex-1">
-          <p class="font-semibold text-sm truncate">${pl.name}</p>
-          <p class="text-xs" style="color: hsl(var(--text-secondary));">${pl.songs.length} songs</p>
+        <div class="info">
+          <p class="name">${Utils.escapeHtml(pl.name)}</p>
+          <p class="count">${pl.songs.length} songs</p>
         </div>
       </button>
     `).join('');
 
     this.state.modalOpen(`
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold">Add to Playlist</h2>
-        <button onclick="window.favoritesPlaylists.closeModal()" class="p-2 rounded-full hover:bg-interactive">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
+      <div data-modal="add-to-playlist" class="add">
+        <div class="head">
+          <h2 class="title">Add to Playlist</h2>
+          <button onclick="window.favoritesPlaylists.closeModal()" class="close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        ${songContext}
+        <div data-list="playlists" class="scroll">${list}</div>
       </div>
-      ${songContext}
-      <div class="max-h-64 overflow-y-auto" style="scrollbar-width: thin;">${list}</div>
     `);
   }
 
-  // Helper to get full song object from ID (used in UIManager)
   getSongById(id) {
     return this.state.getSongById(id);
   }

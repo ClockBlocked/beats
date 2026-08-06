@@ -32,7 +32,7 @@
 
 [data-theme="dark"] {
   /* New names */
-  --bgBody: 66,79,96;
+  --bgBody: 66 79 96;
   --bgCard: 48 54 62;
   --bgCardHeader: 59 66 77;
   --bgPopups: 59 66 77;
