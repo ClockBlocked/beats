@@ -4509,17 +4509,17 @@ mask-image: linear-gradient(to bottom, rgba(20, 20, 40, 1) 0%,
 [data-page="favorites"] [data-card="playlist"] .more:hover { background: rgba(var(--bg-interactive)); }
 
 /* ---------- 404 ---------- */
-[data-page="404"] { text-align: center; }
-[data-page="404"] .wrap { max-width: 28rem; margin: 0 auto; }
-[data-page="404"] .code { font-size: 4.5rem; line-height: 1; font-weight: 900; margin-bottom: 1rem; color: rgba(var(--accent-coral)); }
-[data-page="404"] .title { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-[data-page="404"] .desc { font-size: 0.875rem; line-height: 1.25rem; margin-bottom: 1.5rem; color: rgba(var(--text-secondary)); }
-[data-page="404"] .actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
-[data-page="404"] .home,
-[data-page="404"] .back { padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; color: #ffffff; }
-[data-page="404"] .home { background: linear-gradient(135deg, rgba(var(--accent-coral)), rgba(var(--accent-pink))); }
-[data-page="404"] .back { background: rgba(var(--bg-elevated)); border: 1px solid rgba(var(--border-subtle) / 0.3); color: inherit; }
-[data-page="404"] .note { margin-top: 2rem; font-size: 0.75rem; line-height: 1rem; color: rgba(var(--text-secondary)); }
+[data-page="error"] { text-align: center; }
+[data-page="error"] .wrap { max-width: 28rem; margin: 0 auto; }
+[data-page="error"] .code { font-size: 4.5rem; line-height: 1; font-weight: 900; margin-bottom: 1rem; color: rgba(var(--accent-coral)); }
+[data-page="error"] .title { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+[data-page="error"] .desc { font-size: 0.875rem; line-height: 1.25rem; margin-bottom: 1.5rem; color: rgba(var(--text-secondary)); }
+[data-page="error"] .actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+[data-page="error"] .home,
+[data-page="error"] .back { padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; color: #ffffff; }
+[data-page="error"] .home { background: linear-gradient(135deg, rgba(var(--accent-coral)), rgba(var(--accent-pink))); }
+[data-page="error"] .back { background: rgba(var(--bg-elevated)); border: 1px solid rgba(var(--border-subtle) / 0.3); color: inherit; }
+[data-page="error"] .note { margin-top: 2rem; font-size: 0.75rem; line-height: 1rem; color: rgba(var(--text-secondary)); }
 
 /* ---------- shared cards (album / artist / recent) ---------- */
 [data-card="album"] { width: var(--w, auto); }

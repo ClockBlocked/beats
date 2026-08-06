@@ -416,26 +416,6 @@
   }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(var(--player-accent) / 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 15px rgba(var(--player-accent) / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(var(--player-accent) / 0);
-  }
-}
-
-@keyframes sound {
-  0%, 100% {
-    height: 20%;
-  }
-  50% {
-    height: 100%;
-  }
-}
 
 @keyframes loadingBarGradient {
   0% {

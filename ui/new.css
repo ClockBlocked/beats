@@ -647,12 +647,10 @@ p {
    margin-top: 3.5rem; 
   z-index: 100; 
  
-border: 1px solid crimson;
-
   height: 100px;
 }
 #breadcrumb-container .breadcrumb-trail {
-  background: /* hsl(var(--dark) / 0.7);*/ black;
+  background: hsl(var(--dark) / 0.7);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid hsl(var(--darkest) / 0.3);
   padding: 0.5rem 2rem;
@@ -1260,10 +1258,9 @@ border: 1px solid crimson;
   background: hsl(var(--bg-body) / 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid hsl(var(--border) / 0.3);
-  padding: /* 0.5rem 2rem; */ 0;
+  padding: 0;
   max-height: 60px;
   overflow: hidden;
-   border: 1px solid yellow;
   position: sticky; bottom: 0; z-index: 200;
 }
 .area + .albumTabs + div + div {
